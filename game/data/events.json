@@ -1,0 +1,318 @@
+{
+  "global_events": [
+    {
+      "id": "oil_price_spike",
+      "title": "Oil Price Spike",
+      "headline": "Global oil prices surge amid supply disruptions",
+      "description": "Geopolitical tensions and supply chain disruptions cause oil prices to spike by 30%.",
+      "probability": 0.08,
+      "effects": {
+        "oil_producers": {"economy.gdp_growth": 1.5, "economy.trade_balance": 0.05},
+        "oil_importers": {"economy.gdp_growth": -0.8, "economy.inflation": 1.5}
+      },
+      "tags": ["economy", "energy"]
+    },
+    {
+      "id": "oil_price_crash",
+      "title": "Oil Price Crash",
+      "headline": "Oil prices plummet as demand weakens globally",
+      "description": "A global economic slowdown combined with increased production floods the market.",
+      "probability": 0.06,
+      "effects": {
+        "oil_producers": {"economy.gdp_growth": -2.0, "economy.trade_balance": -0.08},
+        "oil_importers": {"economy.gdp_growth": 0.5, "economy.inflation": -0.8}
+      },
+      "tags": ["economy", "energy"]
+    },
+    {
+      "id": "pandemic_scare",
+      "title": "New Pandemic Threat",
+      "headline": "WHO warns of new pathogen with pandemic potential",
+      "description": "A novel pathogen emerges, triggering global health alerts and travel restrictions.",
+      "probability": 0.03,
+      "effects": {
+        "all": {"economy.gdp_growth": -1.0, "stability": -5.0}
+      },
+      "tags": ["health", "crisis"]
+    },
+    {
+      "id": "ai_breakthrough",
+      "title": "Major AI Breakthrough",
+      "headline": "Scientists achieve AGI milestone in landmark research",
+      "description": "A major AI research lab announces a transformative breakthrough in artificial intelligence.",
+      "probability": 0.05,
+      "effects": {
+        "tech_leaders": {"tech.ai_research": 5.0, "economy.gdp_growth": 0.5}
+      },
+      "tags": ["technology", "ai"]
+    },
+    {
+      "id": "semiconductor_shortage",
+      "title": "Global Chip Shortage",
+      "headline": "Semiconductor shortage disrupts global manufacturing",
+      "description": "Natural disaster and surging demand create severe chip shortages worldwide.",
+      "probability": 0.06,
+      "effects": {
+        "chip_producers": {"economy.gdp_growth": 1.0, "economy.trade_balance": 0.03},
+        "chip_importers": {"economy.gdp_growth": -0.5, "economy.inflation": 0.5}
+      },
+      "tags": ["technology", "supply_chain"]
+    },
+    {
+      "id": "climate_disaster",
+      "title": "Extreme Climate Event",
+      "headline": "Record-breaking weather devastates multiple regions",
+      "description": "Unprecedented weather events cause massive economic damage globally.",
+      "probability": 0.10,
+      "effects": {
+        "all": {"economy.gdp_growth": -0.3, "stability": -2.0}
+      },
+      "tags": ["climate", "crisis"]
+    },
+    {
+      "id": "crypto_crash",
+      "title": "Cryptocurrency Market Crash",
+      "headline": "Crypto markets lose 60% of value in days",
+      "description": "A major stablecoin collapse triggers cascading liquidations across crypto markets.",
+      "probability": 0.05,
+      "effects": {
+        "all": {"economy.gdp_growth": -0.1, "stability": -1.0}
+      },
+      "tags": ["economy", "finance"]
+    },
+    {
+      "id": "space_race_milestone",
+      "title": "Space Race Milestone",
+      "headline": "Historic achievement in space exploration",
+      "description": "A nation achieves a major space milestone, boosting prestige and tech development.",
+      "probability": 0.04,
+      "effects": {
+        "space_leaders": {"tech.space": 5.0, "influence": 3.0}
+      },
+      "tags": ["technology", "space"]
+    },
+    {
+      "id": "trade_war_escalation",
+      "title": "Trade War Escalation",
+      "headline": "Major economies escalate tariff battles",
+      "description": "Retaliatory tariffs between major economies disrupt global trade.",
+      "probability": 0.08,
+      "effects": {
+        "all": {"economy.gdp_growth": -0.4, "economy.trade_balance": -0.02}
+      },
+      "tags": ["economy", "trade"]
+    },
+    {
+      "id": "cyber_attack_wave",
+      "title": "Global Cyber Attack Wave",
+      "headline": "Coordinated cyber attacks hit critical infrastructure worldwide",
+      "description": "Sophisticated state-sponsored cyber attacks target infrastructure across multiple nations.",
+      "probability": 0.06,
+      "effects": {
+        "low_cyber": {"stability": -5.0, "economy.gdp_growth": -0.5},
+        "high_cyber": {"stability": -1.0}
+      },
+      "tags": ["security", "technology"]
+    },
+    {
+      "id": "refugee_crisis",
+      "title": "Major Refugee Crisis",
+      "headline": "Millions displaced as conflict creates humanitarian emergency",
+      "description": "A major conflict or disaster causes mass displacement, straining neighboring nations.",
+      "probability": 0.05,
+      "effects": {
+        "neighboring": {"stability": -4.0, "economy.gdp_growth": -0.3},
+        "distant": {"influence": -1.0}
+      },
+      "tags": ["humanitarian", "crisis"]
+    },
+    {
+      "id": "green_energy_boom",
+      "title": "Clean Energy Revolution",
+      "headline": "Renewable energy costs hit record lows worldwide",
+      "description": "Technological breakthroughs make solar and wind cheaper than all fossil fuels.",
+      "probability": 0.05,
+      "effects": {
+        "green_leaders": {"tech.clean_energy": 5.0, "economy.gdp_growth": 0.5},
+        "oil_producers": {"economy.gdp_growth": -0.8}
+      },
+      "tags": ["energy", "technology"]
+    },
+    {
+      "id": "nuclear_scare",
+      "title": "Nuclear Close Call",
+      "headline": "World holds its breath as nuclear tensions spike",
+      "description": "A military incident between nuclear powers raises global alarm.",
+      "probability": 0.02,
+      "effects": {
+        "all": {"stability": -8.0}
+      },
+      "tags": ["military", "crisis"]
+    },
+    {
+      "id": "global_recession_fears",
+      "title": "Recession Fears Spread",
+      "headline": "Leading economic indicators signal global downturn",
+      "description": "Bond markets invert, consumer confidence drops, and recession fears sweep the globe.",
+      "probability": 0.06,
+      "effects": {
+        "all": {"economy.gdp_growth": -0.8, "stability": -3.0, "economy.unemployment": 1.0}
+      },
+      "tags": ["economy", "crisis"]
+    },
+    {
+      "id": "social_media_revolution",
+      "title": "Social Media Uprising",
+      "headline": "Social media-fueled protests topple government",
+      "description": "Viral protests spread rapidly, threatening regime stability in vulnerable nations.",
+      "probability": 0.04,
+      "effects": {
+        "low_stability": {"stability": -10.0, "leader.approval": -15.0},
+        "high_stability": {"stability": -2.0}
+      },
+      "tags": ["politics", "social"]
+    },
+    {
+      "id": "rare_earth_squeeze",
+      "title": "Rare Earth Supply Crisis",
+      "headline": "Critical mineral exports restricted by key producers",
+      "description": "Export controls on rare earth minerals disrupt global tech supply chains.",
+      "probability": 0.05,
+      "effects": {
+        "mineral_rich": {"influence": 3.0, "economy.trade_balance": 0.02},
+        "mineral_poor": {"tech.semiconductors": -3.0, "economy.gdp_growth": -0.3}
+      },
+      "tags": ["resources", "supply_chain"]
+    },
+    {
+      "id": "food_crisis",
+      "title": "Global Food Crisis",
+      "headline": "Food prices soar as harvests fail across major producers",
+      "description": "Drought and conflict disrupt food production, threatening food security globally.",
+      "probability": 0.05,
+      "effects": {
+        "food_importers": {"stability": -5.0, "economy.inflation": 2.0},
+        "food_exporters": {"economy.trade_balance": 0.04, "influence": 2.0}
+      },
+      "tags": ["resources", "crisis"]
+    },
+    {
+      "id": "defi_disruption",
+      "title": "Financial Innovation Wave",
+      "headline": "DeFi and digital currencies reshape global finance",
+      "description": "Decentralized finance and CBDCs challenge traditional banking systems.",
+      "probability": 0.04,
+      "effects": {
+        "financial_centers": {"economy.gdp_growth": 0.3, "tech.level": 1.0},
+        "all": {"stability": -1.0}
+      },
+      "tags": ["economy", "technology"]
+    }
+  ],
+  "country_events": [
+    {
+      "id": "election_crisis",
+      "title": "Contested Election",
+      "headline": "{country} faces electoral crisis as results disputed",
+      "applicable": ["democracy", "hybrid"],
+      "probability": 0.06,
+      "effects": {"stability": -8.0, "leader.approval": -10.0, "influence": -3.0}
+    },
+    {
+      "id": "military_coup_attempt",
+      "title": "Coup Attempt",
+      "headline": "Military officers attempt coup in {country}",
+      "applicable": ["authoritarian", "hybrid"],
+      "condition": "stability < 40",
+      "probability": 0.04,
+      "effects": {"stability": -15.0, "military.power": -5.0, "influence": -5.0}
+    },
+    {
+      "id": "economic_boom",
+      "title": "Economic Boom",
+      "headline": "{country} experiences unexpected economic surge",
+      "applicable": ["all"],
+      "condition": "stability > 55",
+      "probability": 0.06,
+      "effects": {"economy.gdp_growth": 2.0, "stability": 3.0, "leader.approval": 5.0}
+    },
+    {
+      "id": "corruption_scandal",
+      "title": "Corruption Scandal",
+      "headline": "Major corruption scandal rocks {country}'s leadership",
+      "applicable": ["all"],
+      "probability": 0.07,
+      "effects": {"stability": -5.0, "leader.approval": -8.0, "influence": -2.0}
+    },
+    {
+      "id": "tech_unicorn",
+      "title": "Tech Industry Boom",
+      "headline": "Tech sector booms in {country} with multiple unicorn startups",
+      "applicable": ["all"],
+      "condition": "tech.level > 40",
+      "probability": 0.05,
+      "effects": {"tech.level": 3.0, "economy.gdp_growth": 0.5, "influence": 1.0}
+    },
+    {
+      "id": "natural_disaster",
+      "title": "Natural Disaster",
+      "headline": "Devastating natural disaster strikes {country}",
+      "applicable": ["all"],
+      "probability": 0.06,
+      "effects": {"economy.gdp_growth": -1.5, "stability": -4.0}
+    },
+    {
+      "id": "military_modernization",
+      "title": "Military Modernization Success",
+      "headline": "{country} unveils advanced new weapons systems",
+      "applicable": ["all"],
+      "condition": "tech.level > 50",
+      "probability": 0.05,
+      "effects": {"military.power": 4.0, "influence": 2.0}
+    },
+    {
+      "id": "protest_movement",
+      "title": "Mass Protests",
+      "headline": "Millions take to streets in {country} demanding change",
+      "applicable": ["all"],
+      "condition": "stability < 50",
+      "probability": 0.07,
+      "effects": {"stability": -6.0, "leader.approval": -8.0}
+    },
+    {
+      "id": "diplomatic_triumph",
+      "title": "Diplomatic Triumph",
+      "headline": "{country} brokers historic peace deal",
+      "applicable": ["all"],
+      "condition": "influence > 40",
+      "probability": 0.04,
+      "effects": {"influence": 5.0, "leader.approval": 5.0, "stability": 2.0}
+    },
+    {
+      "id": "currency_crisis",
+      "title": "Currency Crisis",
+      "headline": "{country}'s currency plunges as investors flee",
+      "applicable": ["all"],
+      "condition": "economy.inflation > 8",
+      "probability": 0.06,
+      "effects": {"economy.inflation": 5.0, "economy.gdp_growth": -2.0, "stability": -5.0}
+    },
+    {
+      "id": "energy_discovery",
+      "title": "Major Energy Discovery",
+      "headline": "{country} discovers massive new energy reserves",
+      "applicable": ["all"],
+      "probability": 0.03,
+      "effects": {"resources.oil": 10.0, "resources.natural_gas": 10.0, "economy.gdp_growth": 1.0}
+    },
+    {
+      "id": "brain_drain",
+      "title": "Brain Drain Crisis",
+      "headline": "Skilled workers flee {country} in record numbers",
+      "applicable": ["all"],
+      "condition": "stability < 45",
+      "probability": 0.05,
+      "effects": {"tech.level": -3.0, "economy.gdp_growth": -0.5}
+    }
+  ]
+}
