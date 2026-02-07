@@ -117,25 +117,76 @@ button:hover { filter: brightness(1.15); }
 .bar-fill.accent { background: var(--accent); }
 .bar-fill.purple { background: var(--purple); }
 
-/* ── Action area ────────────────────────────────────── */
-.action-area { display: grid; grid-template-columns: 280px 1fr; gap: 12px; margin-bottom: 16px; }
-.action-cats { display: flex; flex-direction: column; gap: 6px; }
-.cat-btn {
-  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
-  padding: 12px 16px; text-align: left; color: var(--text); font-size: 14px; font-weight: 600;
+/* ── Turn guide ─────────────────────────────────────── */
+.turn-guide {
+  background: linear-gradient(135deg, #1a3a4a, #1a2634);
+  border: 1px solid var(--accent); border-radius: 10px;
+  padding: 14px 20px; margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
 }
-.cat-btn:hover, .cat-btn.active { border-color: var(--accent); color: var(--accent); }
-.action-list { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; min-height: 200px; }
+.turn-guide .tg-text { font-size: 15px; font-weight: 600; }
+.turn-guide .tg-text .tg-ap { color: var(--accent); font-size: 20px; font-weight: 700; }
+.turn-guide .tg-hint { color: var(--dim); font-size: 12px; margin-top: 2px; }
+
+/* ── Action result card ────────────────────────────── */
+.action-result {
+  background: var(--bg2); border: 1px solid var(--green); border-radius: 10px;
+  padding: 16px; margin-bottom: 16px; animation: fadeInUp .3s;
+}
+.action-result.error { border-color: var(--red); }
+.action-result .ar-text { font-size: 15px; font-weight: 600; margin-bottom: 8px; line-height: 1.4; }
+.action-result .ar-changes { display: flex; flex-wrap: wrap; gap: 8px; }
+.action-result .ar-chip {
+  background: var(--bg3); border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 600;
+}
+.action-result .ar-chip.positive { color: var(--green); }
+.action-result .ar-chip.negative { color: var(--red); }
+.action-result .ar-chip.neutral { color: var(--dim); }
+.action-result .ar-dismiss { text-align: right; margin-top: 8px; }
+
+/* ── Quick stats (visible during actions) ──────────── */
+.quick-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px; margin-bottom: 16px;
+}
+.qs-item {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 12px; text-align: center;
+}
+.qs-item .qs-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
+.qs-item .qs-val { font-size: 16px; font-weight: 700; margin-top: 2px; }
+.qs-item .qs-delta { font-size: 11px; font-weight: 600; }
+.qs-item .qs-delta.up { color: var(--green); }
+.qs-item .qs-delta.down { color: var(--red); }
+
+/* ── Action area ────────────────────────────────────── */
+.action-area { margin-bottom: 16px; }
+.action-cats {
+  display: flex; gap: 6px; margin-bottom: 12px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px;
+}
+.cat-btn {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 20px;
+  padding: 10px 18px; text-align: center; color: var(--text); font-size: 13px; font-weight: 600;
+  white-space: nowrap; flex-shrink: 0;
+}
+.cat-btn:hover, .cat-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(79,195,247,.08); }
+.action-list { min-height: 100px; }
 .action-list h3 { font-size: 14px; color: var(--accent); margin-bottom: 12px; }
 .action-item {
   display: flex; align-items: center; justify-content: space-between;
-  background: var(--bg3); border-radius: 8px; padding: 10px 14px; margin-bottom: 8px;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 16px; margin-bottom: 8px;
   cursor: pointer; transition: all .15s;
 }
-.action-item:hover { background: #2d4a5f; }
-.action-item .a-name { font-weight: 600; font-size: 14px; }
+.action-item:hover { border-color: var(--accent); background: rgba(79,195,247,.05); }
+.action-item:active { transform: scale(0.98); }
+.action-item .a-name { font-weight: 600; font-size: 15px; }
 .action-item .a-desc { color: var(--dim); font-size: 12px; margin-top: 2px; }
-.action-item .a-cost { color: var(--accent); font-weight: 700; font-size: 13px; white-space: nowrap; }
+.action-item .a-cost {
+  color: var(--accent); font-weight: 700; font-size: 14px; white-space: nowrap;
+  background: rgba(79,195,247,.1); padding: 4px 10px; border-radius: 12px;
+}
 .action-item.disabled { opacity: .4; pointer-events: none; }
 
 /* ── Target selection modal ─────────────────────────── */
@@ -229,7 +280,6 @@ button:hover { filter: brightness(1.15); }
 /* Responsive */
 @media (max-width: 900px) {
   .dash { grid-template-columns: 1fr; }
-  .action-area { grid-template-columns: 1fr; }
   .top-bar { flex-wrap: wrap; gap: 8px; }
 }
 @media (max-width: 600px) {
@@ -241,10 +291,13 @@ button:hover { filter: brightness(1.15); }
   .tab-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
   .tab-btn { white-space: nowrap; min-height: 44px; }
   button { min-height: 44px; }
-  .action-item { min-height: 48px; padding: 12px 14px; }
+  .action-item { min-height: 48px; padding: 14px; }
   .modal { width: 95vw; max-height: 85vh; padding: 16px; }
   .modal-item { min-height: 48px; padding: 12px 14px; }
-  .cat-btn { min-height: 48px; }
+  .cat-btn { min-height: 44px; padding: 10px 16px; }
+  .turn-guide { flex-direction: column; text-align: center; gap: 8px; }
+  .turn-guide button { width: 100%; }
+  .quick-stats { grid-template-columns: repeat(3, 1fr); }
   #title-screen h1 { font-size: 32px; letter-spacing: 8px; }
   .bottom-bar { position: sticky; bottom: 0; background: var(--bg); padding: 12px 0; z-index: 50; }
   #btn-end-turn { width: 100%; padding: 14px; font-size: 16px; }
@@ -354,17 +407,42 @@ button:hover { filter: brightness(1.15); }
       </div>
     </div>
 
+    <!-- Turn guide -->
+    <div class="turn-guide" id="turn-guide">
+      <div>
+        <div class="tg-text">You have <span class="tg-ap" id="tg-ap">3</span> action points</div>
+        <div class="tg-hint">Choose actions below, then tap End Turn</div>
+      </div>
+      <button class="btn" id="btn-end-turn-top" onclick="endTurn()" style="padding:10px 20px;">End Turn</button>
+    </div>
+
+    <!-- Action result (shown after taking action) -->
+    <div id="action-result" style="display:none;"></div>
+
+    <!-- Quick stats bar -->
+    <div class="quick-stats" id="quick-stats"></div>
+
     <!-- Tabs -->
     <div class="tab-bar">
-      <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
-      <button class="tab-btn" onclick="switchTab('actions')">Actions</button>
-      <button class="tab-btn" onclick="switchTab('diplomacy')">Diplomacy</button>
-      <button class="tab-btn" onclick="switchTab('rankings')">Rankings</button>
-      <button class="tab-btn" onclick="switchTab('intel')">Intel</button>
+      <button class="tab-btn active" onclick="switchTab('actions',this)">Actions</button>
+      <button class="tab-btn" onclick="switchTab('dashboard',this)">Dashboard</button>
+      <button class="tab-btn" onclick="switchTab('diplomacy',this)">Diplomacy</button>
+      <button class="tab-btn" onclick="switchTab('rankings',this)">Rankings</button>
+      <button class="tab-btn" onclick="switchTab('intel',this)">Intel</button>
+    </div>
+
+    <!-- Actions tab (now default) -->
+    <div class="tab-content active" id="tab-actions">
+      <div class="action-area">
+        <div class="action-cats" id="action-cats"></div>
+        <div class="action-list" id="action-list"></div>
+      </div>
+      <!-- Action log for this turn -->
+      <div class="log-area" id="action-log" style="display:none;"></div>
     </div>
 
     <!-- Dashboard tab -->
-    <div class="tab-content active" id="tab-dashboard">
+    <div class="tab-content" id="tab-dashboard">
       <div class="dash">
         <div class="panel" id="p-economy"></div>
         <div class="panel" id="p-military"></div>
@@ -373,18 +451,6 @@ button:hover { filter: brightness(1.15); }
       <div class="dash" style="grid-template-columns: 1fr 1fr;">
         <div class="panel" id="p-status"></div>
         <div class="panel" id="p-resources"></div>
-      </div>
-      <!-- Action log -->
-      <div class="log-area" id="action-log" style="display:none;"></div>
-    </div>
-
-    <!-- Actions tab -->
-    <div class="tab-content" id="tab-actions">
-      <div class="action-area">
-        <div class="action-cats" id="action-cats"></div>
-        <div class="action-list" id="action-list">
-          <p style="color:var(--dim)">Select a category to see available actions.</p>
-        </div>
       </div>
     </div>
 
@@ -514,10 +580,30 @@ async function loadGame(filename) {
 function showGameScreen() {
   hideAll();
   document.getElementById('game-screen').style.display = 'block';
+  prevStats = null;
+  currentCat = null;
+  document.getElementById('action-result').style.display = 'none';
   render();
 }
 
 // ── Rendering ────────────────────────────────────────────────
+
+let prevStats = null; // Track stat changes across actions
+
+function captureStats() {
+  if (!STATE) return null;
+  const p = STATE.countries[STATE.player_code];
+  return {
+    gdp: p.economy.gdp,
+    growth: p.economy.gdp_growth,
+    military: p.military.power,
+    tech: p.tech.level,
+    stability: p.stability,
+    influence: p.influence,
+    approval: p.leader.approval,
+    debt: p.economy.debt_ratio,
+  };
+}
 
 function render() {
   if (!STATE) return;
@@ -531,6 +617,20 @@ function render() {
   document.getElementById('g-ap').textContent = `${STATE.action_points} AP`;
   document.getElementById('g-rank').textContent = `Rank #${STATE.player_rank}`;
 
+  // Turn guide
+  document.getElementById('tg-ap').textContent = STATE.action_points;
+  const guide = document.getElementById('turn-guide');
+  if (STATE.action_points === 0) {
+    guide.style.borderColor = 'var(--orange)';
+    guide.querySelector('.tg-hint').textContent = 'No actions left — tap End Turn to advance';
+  } else {
+    guide.style.borderColor = 'var(--accent)';
+    guide.querySelector('.tg-hint').textContent = 'Choose actions below, then tap End Turn';
+  }
+
+  // Quick stats bar
+  renderQuickStats(p);
+
   renderEconomy(p);
   renderMilitary(p);
   renderTech(p);
@@ -541,6 +641,30 @@ function render() {
   renderIntelList();
   renderActionCats();
   renderLog();
+}
+
+function renderQuickStats(p) {
+  const stats = [
+    {label: 'GDP', val: '$'+p.economy.gdp.toFixed(1)+'T', key: 'gdp'},
+    {label: 'Growth', val: p.economy.gdp_growth.toFixed(1)+'%', key: 'growth'},
+    {label: 'Military', val: p.military.power.toFixed(0), key: 'military'},
+    {label: 'Tech', val: p.tech.level.toFixed(0), key: 'tech'},
+    {label: 'Stability', val: p.stability.toFixed(0), key: 'stability'},
+    {label: 'Approval', val: p.leader.approval.toFixed(0)+'%', key: 'approval'},
+  ];
+  const cur = captureStats();
+  document.getElementById('quick-stats').innerHTML = stats.map(s => {
+    let delta = '';
+    if (prevStats && cur) {
+      const diff = cur[s.key] - prevStats[s.key];
+      if (Math.abs(diff) >= 0.05) {
+        const cls = diff > 0 ? 'up' : 'down';
+        const sign = diff > 0 ? '+' : '';
+        delta = `<div class="qs-delta ${cls}">${sign}${diff.toFixed(1)}</div>`;
+      }
+    }
+    return `<div class="qs-item"><div class="qs-label">${s.label}</div><div class="qs-val">${s.val}</div>${delta}</div>`;
+  }).join('');
 }
 
 function bar(value, max=100, color='accent') {
@@ -696,22 +820,32 @@ function showIntel(code) {
 
 // ── Actions ──────────────────────────────────────────────────
 
+let currentCat = null;
+
 function renderActionCats() {
   const el = document.getElementById('action-cats');
   const cats = Object.keys(STATE.actions);
+  if (!currentCat || !cats.includes(currentCat)) currentCat = cats[0];
   el.innerHTML = cats.map(cat =>
-    `<button class="cat-btn" onclick="showActions('${cat}')">${cat}</button>`
+    `<button class="cat-btn ${cat===currentCat?'active':''}" onclick="showActions('${cat}', this)">${cat}</button>`
   ).join('');
+  showActionList(currentCat);
 }
 
-function showActions(cat) {
+function showActions(cat, btnEl) {
+  currentCat = cat;
   document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
+  if (btnEl) btnEl.classList.add('active');
+  showActionList(cat);
+}
+
+function showActionList(cat) {
   const actions = STATE.actions[cat];
   const el = document.getElementById('action-list');
-  el.innerHTML = `<h3>${cat}</h3>` + actions.map(a => {
+  el.innerHTML = actions.map(a => {
     const disabled = a.cost > STATE.action_points ? 'disabled' : '';
-    return `<div class="action-item ${disabled}" onclick="startAction('${a.id}', ${JSON.stringify(a)})">
+    const escapedDef = JSON.stringify(a).replace(/'/g, "&#39;");
+    return `<div class="action-item ${disabled}" onclick='startAction("${a.id}", ${escapedDef})'>
       <div><div class="a-name">${a.name}</div><div class="a-desc">${a.desc}</div></div>
       <div class="a-cost">${a.cost} AP</div>
     </div>`;
@@ -783,13 +917,55 @@ function selectField(field) { pendingAction.params.field = field; closeModal(); 
 function closeModal() { document.getElementById('modal').style.display = 'none'; }
 
 async function executeAction() {
+  const before = captureStats();
   const payload = {action_id: pendingAction.id, ...pendingAction.params};
   const res = await api('/api/action', payload);
-  if (res.error) { showToast(res.error); return; }
+  if (res.error) {
+    showActionResult(res.error, null, true);
+    pendingAction = null;
+    return;
+  }
   STATE = res.state;
+  const after = captureStats();
+  prevStats = before; // So quick-stats shows deltas
   render();
-  showToast(res.result);
+  showActionResult(res.result, computeChanges(before, after), false);
   pendingAction = null;
+}
+
+function computeChanges(before, after) {
+  if (!before || !after) return [];
+  const labels = {gdp:'GDP', growth:'Growth', military:'Military', tech:'Tech', stability:'Stability', influence:'Influence', approval:'Approval', debt:'Debt'};
+  const suffixes = {gdp:'T', growth:'%', military:'', tech:'', stability:'', influence:'', approval:'%', debt:'%'};
+  const changes = [];
+  for (const key of Object.keys(labels)) {
+    const diff = after[key] - before[key];
+    if (Math.abs(diff) >= 0.05) {
+      const sign = diff > 0 ? '+' : '';
+      const cls = (key === 'debt') ? (diff > 0 ? 'negative' : 'positive') : (diff > 0 ? 'positive' : 'negative');
+      changes.push({label: labels[key], text: `${sign}${diff.toFixed(1)}${suffixes[key]}`, cls});
+    }
+  }
+  return changes;
+}
+
+function showActionResult(text, changes, isError) {
+  const el = document.getElementById('action-result');
+  let html = `<div class="action-result ${isError ? 'error' : ''}">`;
+  html += `<div class="ar-text">${text}</div>`;
+  if (changes && changes.length) {
+    html += '<div class="ar-changes">';
+    for (const c of changes) {
+      html += `<span class="ar-chip ${c.cls}">${c.label} ${c.text}</span>`;
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
+  el.style.display = 'block';
+  // Auto-hide after 8 seconds
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => { el.style.display = 'none'; }, 8000);
 }
 
 function showToast(msg) {
@@ -804,20 +980,22 @@ function showToast(msg) {
 
 function renderLog() {
   const el = document.getElementById('action-log');
-  if (!STATE.turn_log.length) { el.style.display = 'none'; return; }
+  if (!STATE.turn_log || !STATE.turn_log.length) { el.style.display = 'none'; return; }
   el.style.display = 'block';
-  el.innerHTML = `<h3>This Turn</h3>` + STATE.turn_log.map(l => `<div class="log-entry">${l}</div>`).join('');
+  el.innerHTML = `<h3>Actions Taken This Turn</h3>` + STATE.turn_log.map(l => `<div class="log-entry">${l}</div>`).join('');
 }
 
 // ── End Turn ─────────────────────────────────────────────────
 
 async function endTurn() {
-  document.getElementById('btn-end-turn').disabled = true;
-  document.getElementById('btn-end-turn').textContent = 'Processing...';
+  const btns = [document.getElementById('btn-end-turn'), document.getElementById('btn-end-turn-top')];
+  btns.forEach(b => { if(b) { b.disabled = true; b.textContent = 'Processing...'; }});
+  // Clear action result
+  document.getElementById('action-result').style.display = 'none';
+  prevStats = null;
   const res = await api('/api/end_turn', {});
   STATE = res.state;
-  document.getElementById('btn-end-turn').disabled = false;
-  document.getElementById('btn-end-turn').textContent = 'End Turn';
+  btns.forEach(b => { if(b) { b.disabled = false; b.textContent = 'End Turn'; }});
 
   // Check victory/defeat
   if (res.victory) {
@@ -870,6 +1048,8 @@ function showTurnResultOverlay(res) {
 
 function closeTurnResult() {
   document.getElementById('turn-result').style.display = 'none';
+  prevStats = null;
+  document.getElementById('action-result').style.display = 'none';
   render();
 }
 
@@ -902,10 +1082,10 @@ function showDefeat(msg) {
 
 // ── Tabs ─────────────────────────────────────────────────────
 
-function switchTab(name) {
+function switchTab(name, el) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  event.target.classList.add('active');
+  if (el) el.classList.add('active');
   document.getElementById('tab-'+name).classList.add('active');
 }
 
