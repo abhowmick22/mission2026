@@ -192,6 +192,12 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/api/ping")
+def ping():
+    """Health check endpoint. Also used by keep-alive."""
+    return jsonify({"status": "ok"})
+
+
 @app.route("/api/countries", methods=["GET"])
 def get_countries():
     """Get list of playable countries for selection screen."""
@@ -367,6 +373,35 @@ def load():
     session["game_id"] = sid
     _save_session_state(game)
     return jsonify(_world_state(game))
+
+
+# ── Keep-alive (prevents Render free tier from sleeping) ───────────────────
+
+def _start_keep_alive():
+    """Background thread that pings the app every 10 minutes."""
+    import threading
+    import urllib.request
+
+    render_url = os.environ.get("RENDER_EXTERNAL_URL")
+    if not render_url:
+        return  # only run on Render
+
+    def ping_loop():
+        import time
+        url = f"{render_url}/api/ping"
+        while True:
+            time.sleep(600)  # 10 minutes
+            try:
+                urllib.request.urlopen(url, timeout=10)
+            except Exception:
+                pass
+
+    t = threading.Thread(target=ping_loop, daemon=True)
+    t.start()
+
+
+with app.app_context():
+    _start_keep_alive()
 
 
 if __name__ == "__main__":
