@@ -7,8 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
 COPY . .
 
-# Persistent save data volume
-VOLUME /app/saves
+RUN mkdir -p /app/saves
 
 ENV PORT=5000
 ENV FLASK_DEBUG=0
