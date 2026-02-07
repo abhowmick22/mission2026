@@ -2,8 +2,21 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>World Order</title>
+
+<!-- PWA -->
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#0f1923">
+
+<!-- iOS PWA support -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="World Order">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+
+<!-- Prevent iOS text size adjustment -->
+<meta name="format-detection" content="telephone=no">
 <style>
 :root {
   --bg: #0f1923;
@@ -19,8 +32,13 @@
   --purple: #ab47bc;
   --border: #2a3a4a;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg); color: var(--text); min-height: 100vh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  -webkit-font-smoothing: antialiased;
+}
 a { color: var(--accent); text-decoration: none; }
 button { font-family: inherit; cursor: pointer; border: none; border-radius: 6px; padding: 8px 16px; font-size: 14px; transition: all .15s; }
 button:hover { filter: brightness(1.15); }
@@ -193,9 +211,24 @@ button:hover { filter: brightness(1.15); }
 @media (max-width: 900px) {
   .dash { grid-template-columns: 1fr; }
   .action-area { grid-template-columns: 1fr; }
+  .top-bar { flex-wrap: wrap; gap: 8px; }
 }
 @media (max-width: 600px) {
   .country-grid { grid-template-columns: 1fr; }
+  #app { padding: 8px; }
+  .top-bar { padding: 10px 12px; }
+  .top-bar .nation-name { font-size: 18px; }
+  .panel { padding: 12px; }
+  .tab-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
+  .tab-btn { white-space: nowrap; min-height: 44px; }
+  button { min-height: 44px; }
+  .action-item { min-height: 48px; padding: 12px 14px; }
+  .modal { width: 95vw; max-height: 85vh; padding: 16px; }
+  .modal-item { min-height: 48px; padding: 12px 14px; }
+  .cat-btn { min-height: 48px; }
+  #title-screen h1 { font-size: 32px; letter-spacing: 8px; }
+  .bottom-bar { position: sticky; bottom: 0; background: var(--bg); padding: 12px 0; z-index: 50; }
+  #btn-end-turn { width: 100%; padding: 14px; font-size: 16px; }
 }
 
 /* ── Tabs ───────────────────────────────────────────── */
@@ -217,6 +250,19 @@ button:hover { filter: brightness(1.15); }
   animation: fadeInUp .3s; max-width: 500px; text-align: center;
 }
 @keyframes fadeInUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%); } }
+
+/* iOS install prompt */
+.ios-prompt {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--bg2); border-top: 1px solid var(--accent);
+  padding: 16px; text-align: center; z-index: 400;
+  animation: slideUp .3s;
+}
+.ios-prompt p { font-size: 14px; margin-bottom: 8px; }
+.ios-prompt .share-icon { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--accent); border-radius: 4px; position: relative; vertical-align: middle; }
+.ios-prompt .share-icon::after { content: ''; position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 2px; height: 12px; background: var(--accent); }
+.ios-prompt .share-icon::before { content: ''; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 5px solid var(--accent); }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 </style>
 </head>
 <body>
@@ -829,6 +875,28 @@ function saveAndQuit() {
     }
   } catch(e) {}
   showTitle();
+})();
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+}
+
+// iOS "Add to Home Screen" prompt
+(function() {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone === true;
+  const dismissed = localStorage.getItem('ios-prompt-dismissed');
+  if (isIOS && !isStandalone && !dismissed) {
+    const el = document.createElement('div');
+    el.className = 'ios-prompt';
+    el.innerHTML = `
+      <p>Install <b>World Order</b> on your iPhone:</p>
+      <p>Tap <span class="share-icon"></span> then <b>"Add to Home Screen"</b></p>
+      <button class="btn-dim btn-sm" onclick="this.parentElement.remove(); localStorage.setItem('ios-prompt-dismissed','1');" style="margin-top:8px;">Dismiss</button>
+    `;
+    document.body.appendChild(el);
+  }
 })();
 </script>
 </body>
