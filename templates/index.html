@@ -445,8 +445,13 @@ let pendingAction = null;
 
 async function api(url, data) {
   const opts = data ? { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) } : {};
-  const res = await fetch(url, opts);
-  return res.json();
+  try {
+    const res = await fetch(url, opts);
+    return await res.json();
+  } catch(e) {
+    console.error('API error:', url, e);
+    return {error: 'Network error'};
+  }
 }
 
 // ── Screen navigation ────────────────────────────────────────
@@ -461,6 +466,10 @@ async function showSelectScreen() {
   const el = document.getElementById('select-screen');
   el.style.display = '';
   const countries = await api('/api/countries');
+  if (countries.error || !Array.isArray(countries)) {
+    document.getElementById('country-grid').innerHTML = '<p style="color:var(--red);text-align:center;">Failed to load countries. Try refreshing.</p>';
+    return;
+  }
   const grid = document.getElementById('country-grid');
   grid.innerHTML = countries.map(c => `
     <div class="country-card" onclick="startGame('${c.code}')">
@@ -491,11 +500,15 @@ async function showLoadScreen() {
 // ── Game start / load ────────────────────────────────────────
 
 async function startGame(code) {
-  STATE = await api('/api/new_game', {country_code: code});
+  const res = await api('/api/new_game', {country_code: code});
+  if (res.error) { showToast('Failed to start game: ' + res.error); showTitle(); return; }
+  STATE = res;
   showGameScreen();
 }
 async function loadGame(filename) {
-  STATE = await api('/api/load', {filename});
+  const res = await api('/api/load', {filename});
+  if (res.error) { showToast('Failed to load game: ' + res.error); showTitle(); return; }
+  STATE = res;
   showGameScreen();
 }
 function showGameScreen() {
