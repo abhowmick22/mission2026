@@ -1,52 +1,108 @@
-"""Flask web app for World Order game."""
+"""Flask web app for World Order game.
+
+Game state persists to disk via the save system, so games survive
+server restarts and redeployments. Each browser session gets a
+persistent game ID stored in a cookie, mapped to a save file.
+"""
 
 from __future__ import annotations
+import json
 import os
+from pathlib import Path
+
 from flask import Flask, render_template, jsonify, request, session
 
 from game.world import World
-from game.engine import GameEngine
 from game.events import EventEngine
 from game.ai import AIPlayer
 from game.actions import execute_action, ACTION_CATEGORIES, TECH_FIELDS
-from game.save_manager import save_game, auto_save, load_game, list_saves
+from game.save_manager import save_game, load_game, list_saves, SAVE_DIR, ensure_save_dir
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
+app.secret_key = os.environ.get("SECRET_KEY", "worldorder-dev-key-change-in-prod")
 
-# In-memory game states keyed by session id
-_games: dict[str, dict] = {}
+
+# ── Session-persistent game management ─────────────────────────────────────
+
+def _session_save_path() -> Path | None:
+    """Get the save file path for the current session."""
+    sid = session.get("game_id")
+    if not sid:
+        return None
+    ensure_save_dir()
+    return SAVE_DIR / f"session_{sid}.json"
+
+
+def _save_session_state(game: dict):
+    """Persist full game state (world + action points + log) to disk."""
+    path = _session_save_path()
+    if not path:
+        return
+    data = game["world"].to_dict()
+    data["_session"] = {
+        "action_points": game["action_points"],
+        "turn_phase": game["turn_phase"],
+        "turn_log": game["turn_log"],
+    }
+    with open(path, "w") as f:
+        json.dump(data, f)
+
+
+def _load_session_state() -> dict | None:
+    """Load game state from disk for the current session."""
+    path = _session_save_path()
+    if not path or not path.exists():
+        return None
+    try:
+        with open(path) as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return None
+    session_meta = data.pop("_session", {})
+    world = World.from_dict(data)
+    ai_players = {
+        code: AIPlayer(country)
+        for code, country in world.countries.items()
+        if code != world.player_code
+    }
+    return {
+        "world": world,
+        "ai_players": ai_players,
+        "event_engine": EventEngine(),
+        "action_points": session_meta.get("action_points", 4),
+        "turn_phase": session_meta.get("turn_phase", "actions"),
+        "turn_events": [],
+        "turn_ai_actions": {},
+        "turn_log": session_meta.get("turn_log", []),
+    }
 
 
 def _get_game() -> dict | None:
-    sid = session.get("game_id")
-    if sid and sid in _games:
-        return _games[sid]
-    return None
+    return _load_session_state()
 
 
 def _create_game(player_code: str) -> dict:
     world = World()
     world.load_countries()
     world.player_code = player_code
-    ai_players = {}
-    for code, country in world.countries.items():
-        if code != player_code:
-            ai_players[code] = AIPlayer(country)
+    ai_players = {
+        code: AIPlayer(country)
+        for code, country in world.countries.items()
+        if code != player_code
+    }
     game = {
         "world": world,
         "ai_players": ai_players,
         "event_engine": EventEngine(),
         "action_points": 4,
-        "turn_phase": "actions",  # actions, review
+        "turn_phase": "actions",
         "turn_events": [],
         "turn_ai_actions": {},
         "turn_log": [],
     }
     sid = os.urandom(8).hex()
     session["game_id"] = sid
-    _games[sid] = game
-    auto_save(world)
+    _save_session_state(game)
     return game
 
 
@@ -63,7 +119,8 @@ def _world_state(game: dict) -> dict:
             "name": c.name,
             "code": c.code,
             "region": c.region,
-            "leader": {"name": c.leader.name, "title": c.leader.title, "traits": c.leader.traits, "approval": round(c.leader.approval, 1)},
+            "leader": {"name": c.leader.name, "title": c.leader.title,
+                       "traits": c.leader.traits, "approval": round(c.leader.approval, 1)},
             "government": c.government,
             "population": round(c.population, 1),
             "economy": {
@@ -114,7 +171,8 @@ def _world_state(game: dict) -> dict:
         "year": world.year,
         "month": world.month,
         "countries": countries,
-        "rankings": [{"code": c, "power": round(p, 1), "name": world.countries[c].name} for c, p in rankings],
+        "rankings": [{"code": c, "power": round(p, 1), "name": world.countries[c].name}
+                     for c, p in rankings],
         "action_points": game["action_points"],
         "turn_phase": game["turn_phase"],
         "turn_events": game["turn_events"],
@@ -151,16 +209,13 @@ def get_countries():
         else:
             diff = "Expert"
         countries.append({
-            "code": code,
-            "name": c.name,
+            "code": code, "name": c.name,
             "leader": f"{c.leader.title} {c.leader.name}",
             "gdp": round(c.economy.gdp, 1),
             "military": round(c.military.power, 0),
             "tech": round(c.tech.level, 0),
-            "difficulty": diff,
-            "government": c.government,
-            "region": c.region,
-            "traits": c.traits,
+            "difficulty": diff, "government": c.government,
+            "region": c.region, "traits": c.traits,
         })
     return jsonify(countries)
 
@@ -212,6 +267,7 @@ def do_action():
     game["action_points"] -= cost
     game["turn_log"].append(result)
 
+    _save_session_state(game)
     return jsonify({"result": result, "state": _world_state(game)})
 
 
@@ -261,7 +317,6 @@ def end_turn():
     if victory:
         world.game_over = True
         world.victory_type = victory
-        save_game(world, slot=f"victory_{world.player_code}")
     elif defeat:
         world.game_over = True
         world.victory_type = None
@@ -269,7 +324,8 @@ def end_turn():
     # Reset for next turn
     game["action_points"] = 4
     game["turn_log"] = []
-    auto_save(world)
+
+    _save_session_state(game)
 
     return jsonify({
         "state": _world_state(game),
@@ -292,10 +348,11 @@ def load():
     if not filename:
         return jsonify({"error": "No filename"}), 400
     world = load_game(filename)
-    ai_players = {}
-    for code, country in world.countries.items():
-        if code != world.player_code:
-            ai_players[code] = AIPlayer(country)
+    ai_players = {
+        code: AIPlayer(country)
+        for code, country in world.countries.items()
+        if code != world.player_code
+    }
     game = {
         "world": world,
         "ai_players": ai_players,
@@ -308,9 +365,11 @@ def load():
     }
     sid = os.urandom(8).hex()
     session["game_id"] = sid
-    _games[sid] = game
+    _save_session_state(game)
     return jsonify(_world_state(game))
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    debug = os.environ.get("FLASK_DEBUG", "1") == "1"
+    app.run(debug=debug, host="0.0.0.0", port=port)
