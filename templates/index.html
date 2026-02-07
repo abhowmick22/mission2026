@@ -58,7 +58,7 @@ button:hover { filter: brightness(1.15); }
 #title-screen .menu-btn { display: block; width: 240px; margin: 12px auto; padding: 14px; font-size: 16px; }
 
 /* ── Country Select ─────────────────────────────────── */
-#select-screen { padding: 20px; display: none; }
+#select-screen { padding: 20px; }
 #select-screen h2 { text-align: center; margin-bottom: 20px; color: var(--accent); }
 .country-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
 .country-card {
@@ -321,7 +321,7 @@ button:hover { filter: brightness(1.15); }
   </div>
 
   <!-- ═══ COUNTRY SELECT ═══ -->
-  <div id="select-screen">
+  <div id="select-screen" style="display:none;">
     <h2>Choose Your Nation</h2>
     <div class="country-grid" id="country-grid"></div>
     <div style="text-align:center; margin-top: 20px;">
@@ -337,7 +337,7 @@ button:hover { filter: brightness(1.15); }
   </div>
 
   <!-- ═══ GAME SCREEN ═══ -->
-  <div id="game-screen">
+  <div id="game-screen" style="display:none;">
     <!-- Top bar -->
     <div class="top-bar">
       <div>
@@ -460,11 +460,11 @@ function hideAll() {
   for (const id of ['title-screen','select-screen','load-screen','game-screen'])
     document.getElementById(id).style.display = 'none';
 }
-function showTitle() { hideAll(); document.getElementById('title-screen').style.display = ''; updateAuthUI(); }
+function showTitle() { hideAll(); document.getElementById('title-screen').style.display = 'block'; updateAuthUI(); }
 async function showSelectScreen() {
   hideAll();
   const el = document.getElementById('select-screen');
-  el.style.display = '';
+  el.style.display = 'block';
   const countries = await api('/api/countries');
   if (countries.error || !Array.isArray(countries)) {
     document.getElementById('country-grid').innerHTML = '<p style="color:var(--red);text-align:center;">Failed to load countries. Try refreshing.</p>';
@@ -486,7 +486,7 @@ async function showSelectScreen() {
 }
 async function showLoadScreen() {
   hideAll();
-  document.getElementById('load-screen').style.display = '';
+  document.getElementById('load-screen').style.display = 'block';
   const saves = await api('/api/saves');
   const el = document.getElementById('saves-list');
   if (!saves.length) { el.innerHTML = '<p style="color:var(--dim);text-align:center;">No saved games found.</p>'; return; }
@@ -513,7 +513,7 @@ async function loadGame(filename) {
 }
 function showGameScreen() {
   hideAll();
-  document.getElementById('game-screen').style.display = '';
+  document.getElementById('game-screen').style.display = 'block';
   render();
 }
 
@@ -547,7 +547,7 @@ function bar(value, max=100, color='accent') {
   const pct = Math.min(100, Math.max(0, value/max*100));
   const c = pct >= 70 ? 'green' : pct >= 40 ? 'yellow' : 'red';
   const cl = color === 'auto' ? c : color;
-  return `<div class="bar-wrap"><div class="bar"><div class="bar-fill ${cl}" style="width:${pct}%"></div></div><span style="font-size:12px;min-width:35px;text-align:right;">${value.toFixed?.(1) ?? value}</span></div>`;
+  return `<div class="bar-wrap"><div class="bar"><div class="bar-fill ${cl}" style="width:${pct}%"></div></div><span style="font-size:12px;min-width:35px;text-align:right;">${typeof value === 'number' ? value.toFixed(1) : value}</span></div>`;
 }
 
 function statRow(label, value, extra='') {
@@ -770,7 +770,7 @@ function showFieldModal() {
     const val = STATE.countries[STATE.player_code].tech[key === 'ai' ? 'ai_research' : key === 'energy' ? 'clean_energy' : key === 'bio' ? 'biotech' : key === 'chips' ? 'semiconductors' : key];
     html += `<div class="modal-item" onclick="selectField('${key}')">
       <span class="mi-name">${name}</span>
-      <span style="color:var(--dim)">${val?.toFixed(0) ?? '?'}</span>
+      <span style="color:var(--dim)">${val != null ? val.toFixed(0) : '?'}</span>
     </div>`;
   }
   document.getElementById('modal-body').innerHTML = html;
