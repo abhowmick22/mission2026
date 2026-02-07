@@ -670,7 +670,7 @@ function showIntel(code) {
   const p = STATE.countries[STATE.player_code];
   const rel = p.relationships[code] || 0;
   const el = document.getElementById('intel-detail');
-  el.style.display = '';
+  el.style.display = 'block';
   el.innerHTML = `<h3>${c.name} (${c.government})</h3>
     <div class="dash" style="grid-template-columns:1fr 1fr;">
       <div>
@@ -746,7 +746,7 @@ function showTargetModal() {
     </div>`;
   }
   document.getElementById('modal-body').innerHTML = html;
-  document.getElementById('modal').style.display = '';
+  document.getElementById('modal').style.display = 'flex';
 }
 
 function showRegionModal() {
@@ -760,7 +760,7 @@ function showRegionModal() {
     </div>`;
   }
   document.getElementById('modal-body').innerHTML = html;
-  document.getElementById('modal').style.display = '';
+  document.getElementById('modal').style.display = 'flex';
 }
 
 function showFieldModal() {
@@ -774,7 +774,7 @@ function showFieldModal() {
     </div>`;
   }
   document.getElementById('modal-body').innerHTML = html;
-  document.getElementById('modal').style.display = '';
+  document.getElementById('modal').style.display = 'flex';
 }
 
 function selectTarget(code) { pendingAction.params.target_code = code; closeModal(); executeAction(); }
@@ -805,7 +805,7 @@ function showToast(msg) {
 function renderLog() {
   const el = document.getElementById('action-log');
   if (!STATE.turn_log.length) { el.style.display = 'none'; return; }
-  el.style.display = '';
+  el.style.display = 'block';
   el.innerHTML = `<h3>This Turn</h3>` + STATE.turn_log.map(l => `<div class="log-entry">${l}</div>`).join('');
 }
 
@@ -835,7 +835,7 @@ async function endTurn() {
 
 function showTurnResultOverlay(res) {
   const el = document.getElementById('turn-result');
-  el.style.display = '';
+  el.style.display = 'block';
   document.getElementById('tr-title').textContent = `World News — ${STATE.date}`;
 
   let html = '';
@@ -931,7 +931,7 @@ function toggleAuthMode() {
 function showAuthError(msg) {
   const el = document.getElementById('auth-error');
   el.textContent = msg;
-  el.style.display = '';
+  el.style.display = 'block';
 }
 
 async function doLogin() {
@@ -971,7 +971,7 @@ async function doLogout() {
 
 function playAsGuest() {
   currentUser = null;
-  document.getElementById('menu-logged-in').style.display = '';
+  document.getElementById('menu-logged-in').style.display = 'block';
   document.getElementById('menu-logged-out').style.display = 'none';
   document.getElementById('welcome-msg').innerHTML = '<span class="user-badge">Guest</span>';
 }
@@ -990,12 +990,12 @@ async function resumeGame() {
 
 function updateAuthUI() {
   if (currentUser) {
-    document.getElementById('menu-logged-in').style.display = '';
+    document.getElementById('menu-logged-in').style.display = 'block';
     document.getElementById('menu-logged-out').style.display = 'none';
     document.getElementById('welcome-msg').innerHTML = `Welcome, <b>${currentUser}</b> <span class="user-badge">${currentUser}</span>`;
   } else {
     document.getElementById('menu-logged-in').style.display = 'none';
-    document.getElementById('menu-logged-out').style.display = '';
+    document.getElementById('menu-logged-out').style.display = 'block';
   }
 }
 
