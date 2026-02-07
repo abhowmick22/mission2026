@@ -4,6 +4,14 @@ A turn-based strategy game modeling contemporary geopolitics. Lead one of 15 rea
 
 ## Quick Start
 
+### Web App (recommended)
+```bash
+pip install -r requirements.txt
+python web_app.py
+```
+Then open http://localhost:5000 in your browser.
+
+### Terminal Version
 ```bash
 pip install -r requirements.txt
 python main.py
@@ -43,7 +51,10 @@ python main.py
 ## Architecture
 
 ```
-main.py              # Entry point
+web_app.py           # Flask web app (recommended)
+main.py              # Terminal entry point
+templates/
+  index.html         # Single-page web frontend
 game/
   engine.py          # Game loop and turn processing
   world.py           # World state, rankings, victory/defeat

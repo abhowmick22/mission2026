@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Order</title>
+<style>
+:root {
+  --bg: #0f1923;
+  --bg2: #1a2634;
+  --bg3: #243447;
+  --text: #e0e6ed;
+  --dim: #7a8b9a;
+  --accent: #4fc3f7;
+  --green: #66bb6a;
+  --red: #ef5350;
+  --orange: #ffa726;
+  --yellow: #ffee58;
+  --purple: #ab47bc;
+  --border: #2a3a4a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+a { color: var(--accent); text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; border-radius: 6px; padding: 8px 16px; font-size: 14px; transition: all .15s; }
+button:hover { filter: brightness(1.15); }
+.btn { background: var(--accent); color: #000; font-weight: 600; }
+.btn-dim { background: var(--bg3); color: var(--text); }
+.btn-red { background: var(--red); color: #fff; }
+.btn-green { background: var(--green); color: #000; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+
+/* ── Layout ─────────────────────────────────────────── */
+#app { max-width: 1200px; margin: 0 auto; padding: 16px; }
+
+/* ── Title Screen ───────────────────────────────────── */
+#title-screen { text-align: center; padding: 60px 20px; }
+#title-screen h1 { font-size: 48px; letter-spacing: 12px; color: #fff; margin-bottom: 8px; }
+#title-screen .subtitle { color: var(--dim); font-size: 18px; margin-bottom: 40px; }
+#title-screen .menu-btn { display: block; width: 240px; margin: 12px auto; padding: 14px; font-size: 16px; }
+
+/* ── Country Select ─────────────────────────────────── */
+#select-screen { padding: 20px; display: none; }
+#select-screen h2 { text-align: center; margin-bottom: 20px; color: var(--accent); }
+.country-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.country-card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px; cursor: pointer; transition: all .2s;
+}
+.country-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 20px rgba(79,195,247,.15); }
+.country-card .name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.country-card .leader { color: var(--dim); font-size: 13px; margin-bottom: 10px; }
+.country-card .stats { display: flex; gap: 12px; font-size: 13px; }
+.country-card .stats span { color: var(--dim); }
+.country-card .stats b { color: var(--text); }
+.diff-Easy { color: var(--green); }
+.diff-Medium { color: var(--yellow); }
+.diff-Hard { color: var(--orange); }
+.diff-Expert { color: var(--red); }
+
+/* ── Game Screen ────────────────────────────────────── */
+#game-screen { display: none; }
+.top-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--bg2); border-radius: 10px; padding: 12px 20px; margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.top-bar .nation-name { font-size: 22px; font-weight: 700; }
+.top-bar .date { font-size: 16px; color: var(--accent); font-weight: 600; }
+.top-bar .meta { color: var(--dim); font-size: 13px; }
+.top-bar .ap-badge {
+  background: var(--accent); color: #000; padding: 4px 12px; border-radius: 20px;
+  font-weight: 700; font-size: 14px;
+}
+
+/* Dashboard panels */
+.dash { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.panel {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px;
+}
+.panel h3 {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 2px;
+  color: var(--dim); margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px;
+}
+.stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 14px; }
+.stat-label { color: var(--dim); }
+.stat-val { font-weight: 600; }
+.stat-val.good { color: var(--green); }
+.stat-val.bad { color: var(--red); }
+.stat-val.warn { color: var(--orange); }
+
+/* Stat bars */
+.bar-wrap { display: flex; align-items: center; gap: 8px; flex: 1; margin-left: 12px; }
+.bar { flex: 1; height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; max-width: 100px; }
+.bar-fill { height: 100%; border-radius: 3px; transition: width .5s; }
+.bar-fill.green { background: var(--green); }
+.bar-fill.yellow { background: var(--yellow); }
+.bar-fill.red { background: var(--red); }
+.bar-fill.accent { background: var(--accent); }
+.bar-fill.purple { background: var(--purple); }
+
+/* ── Action area ────────────────────────────────────── */
+.action-area { display: grid; grid-template-columns: 280px 1fr; gap: 12px; margin-bottom: 16px; }
+.action-cats { display: flex; flex-direction: column; gap: 6px; }
+.cat-btn {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 16px; text-align: left; color: var(--text); font-size: 14px; font-weight: 600;
+}
+.cat-btn:hover, .cat-btn.active { border-color: var(--accent); color: var(--accent); }
+.action-list { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; min-height: 200px; }
+.action-list h3 { font-size: 14px; color: var(--accent); margin-bottom: 12px; }
+.action-item {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--bg3); border-radius: 8px; padding: 10px 14px; margin-bottom: 8px;
+  cursor: pointer; transition: all .15s;
+}
+.action-item:hover { background: #2d4a5f; }
+.action-item .a-name { font-weight: 600; font-size: 14px; }
+.action-item .a-desc { color: var(--dim); font-size: 12px; margin-top: 2px; }
+.action-item .a-cost { color: var(--accent); font-weight: 700; font-size: 13px; white-space: nowrap; }
+.action-item.disabled { opacity: .4; pointer-events: none; }
+
+/* ── Target selection modal ─────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex;
+  align-items: center; justify-content: center; z-index: 100;
+}
+.modal {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
+  padding: 24px; width: 480px; max-height: 80vh; overflow-y: auto;
+}
+.modal h3 { margin-bottom: 16px; color: var(--accent); }
+.modal-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-radius: 8px; cursor: pointer; margin-bottom: 4px;
+}
+.modal-item:hover { background: var(--bg3); }
+.modal-item .mi-name { font-weight: 600; }
+.modal-item .mi-rel { font-size: 13px; }
+.rel-good { color: var(--green); }
+.rel-warm { color: #a5d6a7; }
+.rel-neutral { color: var(--yellow); }
+.rel-tense { color: var(--orange); }
+.rel-hostile { color: var(--red); }
+
+/* ── News / Events ──────────────────────────────────── */
+.news-panel {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px; margin-bottom: 16px;
+}
+.news-panel h3 { color: var(--red); font-size: 14px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
+.news-item { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.news-item:last-child { border-bottom: none; }
+.news-item .n-headline { font-weight: 600; }
+.news-item .n-detail { color: var(--dim); font-size: 12px; margin-top: 2px; }
+.news-item.player-news { border-left: 3px solid var(--yellow); padding-left: 10px; }
+
+/* ── Turn result overlay ────────────────────────────── */
+#turn-result {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7);
+  z-index: 200; overflow-y: auto;
+}
+#turn-result .inner {
+  max-width: 700px; margin: 40px auto; background: var(--bg2);
+  border: 1px solid var(--border); border-radius: 14px; padding: 30px;
+}
+#turn-result h2 { text-align: center; margin-bottom: 20px; color: var(--accent); }
+
+/* ── Rankings sidebar ───────────────────────────────── */
+.rankings-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.rankings-table th { text-align: left; color: var(--dim); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.rankings-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.rankings-table tr.player-row { background: rgba(79,195,247,.08); }
+.rankings-table tr.player-row td { color: var(--accent); font-weight: 600; }
+
+/* ── Bottom bar ─────────────────────────────────────── */
+.bottom-bar { display: flex; gap: 8px; justify-content: center; margin: 16px 0; }
+
+/* ── Log ────────────────────────────────────────────── */
+.log-area { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+.log-area h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: var(--dim); margin-bottom: 8px; }
+.log-entry { font-size: 13px; padding: 4px 0; color: var(--text); border-bottom: 1px solid var(--border); }
+.log-entry:last-child { border-bottom: none; }
+
+/* Victory/Defeat */
+.victory-screen, .defeat-screen {
+  text-align: center; padding: 60px 20px;
+}
+.victory-screen h1 { font-size: 42px; color: var(--yellow); margin-bottom: 10px; }
+.defeat-screen h1 { font-size: 42px; color: var(--red); margin-bottom: 10px; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .dash { grid-template-columns: 1fr; }
+  .action-area { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .country-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Tabs ───────────────────────────────────────────── */
+.tab-bar { display: flex; gap: 4px; margin-bottom: 16px; }
+.tab-btn {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px 8px 0 0;
+  padding: 8px 18px; color: var(--dim); font-size: 13px; font-weight: 600;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { background: var(--bg3); color: var(--accent); border-bottom-color: var(--bg3); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Action result toast */
+.toast {
+  position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+  background: var(--bg3); border: 1px solid var(--accent); border-radius: 10px;
+  padding: 14px 24px; font-size: 14px; font-weight: 600; z-index: 300;
+  animation: fadeInUp .3s; max-width: 500px; text-align: center;
+}
+@keyframes fadeInUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%); } }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- ═══ TITLE SCREEN ═══ -->
+  <div id="title-screen">
+    <h1>WORLD ORDER</h1>
+    <div class="subtitle">A Geopolitics Strategy Game</div>
+    <p style="color: var(--dim); max-width: 500px; margin: 0 auto 40px; line-height: 1.6;">
+      Lead your nation through modern geopolitics. Navigate diplomacy,
+      manage your economy, project military power, and race for technological supremacy.
+      Each turn is one month. Play a few turns per session &mdash; your game auto-saves.
+    </p>
+    <button class="btn menu-btn" onclick="showSelectScreen()">New Game</button>
+    <button class="btn-dim menu-btn" onclick="showLoadScreen()">Continue Saved Game</button>
+  </div>
+
+  <!-- ═══ COUNTRY SELECT ═══ -->
+  <div id="select-screen">
+    <h2>Choose Your Nation</h2>
+    <div class="country-grid" id="country-grid"></div>
+    <div style="text-align:center; margin-top: 20px;">
+      <button class="btn-dim" onclick="showTitle()">Back</button>
+    </div>
+  </div>
+
+  <!-- ═══ LOAD SCREEN ═══ -->
+  <div id="load-screen" style="display:none; padding: 40px;">
+    <h2 style="text-align:center; color:var(--accent); margin-bottom:20px;">Load Saved Game</h2>
+    <div id="saves-list" style="max-width:500px; margin:0 auto;"></div>
+    <div style="text-align:center; margin-top:20px;"><button class="btn-dim" onclick="showTitle()">Back</button></div>
+  </div>
+
+  <!-- ═══ GAME SCREEN ═══ -->
+  <div id="game-screen">
+    <!-- Top bar -->
+    <div class="top-bar">
+      <div>
+        <div class="nation-name" id="g-nation"></div>
+        <div class="meta" id="g-leader"></div>
+      </div>
+      <div style="text-align:center;">
+        <div class="date" id="g-date"></div>
+        <div class="meta" id="g-turn"></div>
+      </div>
+      <div style="text-align:right;">
+        <span class="ap-badge" id="g-ap"></span>
+        <div class="meta" id="g-rank"></div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
+      <button class="tab-btn" onclick="switchTab('actions')">Actions</button>
+      <button class="tab-btn" onclick="switchTab('diplomacy')">Diplomacy</button>
+      <button class="tab-btn" onclick="switchTab('rankings')">Rankings</button>
+      <button class="tab-btn" onclick="switchTab('intel')">Intel</button>
+    </div>
+
+    <!-- Dashboard tab -->
+    <div class="tab-content active" id="tab-dashboard">
+      <div class="dash">
+        <div class="panel" id="p-economy"></div>
+        <div class="panel" id="p-military"></div>
+        <div class="panel" id="p-tech"></div>
+      </div>
+      <div class="dash" style="grid-template-columns: 1fr 1fr;">
+        <div class="panel" id="p-status"></div>
+        <div class="panel" id="p-resources"></div>
+      </div>
+      <!-- Action log -->
+      <div class="log-area" id="action-log" style="display:none;"></div>
+    </div>
+
+    <!-- Actions tab -->
+    <div class="tab-content" id="tab-actions">
+      <div class="action-area">
+        <div class="action-cats" id="action-cats"></div>
+        <div class="action-list" id="action-list">
+          <p style="color:var(--dim)">Select a category to see available actions.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Diplomacy tab -->
+    <div class="tab-content" id="tab-diplomacy">
+      <div class="panel" id="p-diplomacy"></div>
+    </div>
+
+    <!-- Rankings tab -->
+    <div class="tab-content" id="tab-rankings">
+      <div class="panel" id="p-rankings"></div>
+    </div>
+
+    <!-- Intel tab -->
+    <div class="tab-content" id="tab-intel">
+      <div class="panel">
+        <h3>Select a nation to inspect</h3>
+        <div id="intel-list"></div>
+      </div>
+      <div class="panel" id="intel-detail" style="margin-top:12px; display:none;"></div>
+    </div>
+
+    <!-- Bottom actions -->
+    <div class="bottom-bar">
+      <button class="btn" id="btn-end-turn" onclick="endTurn()">End Turn</button>
+      <button class="btn-dim btn-sm" onclick="saveAndQuit()">Save & Quit</button>
+    </div>
+  </div>
+
+  <!-- ═══ TURN RESULT OVERLAY ═══ -->
+  <div id="turn-result">
+    <div class="inner">
+      <h2 id="tr-title"></h2>
+      <div id="tr-content"></div>
+      <div style="text-align:center; margin-top:20px;">
+        <button class="btn" onclick="closeTurnResult()">Continue</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL (target/region/field selection) ═══ -->
+<div id="modal" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <h3 id="modal-title"></h3>
+    <div id="modal-body"></div>
+    <div style="text-align:right; margin-top:12px;">
+      <button class="btn-dim btn-sm" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let STATE = null;
+let pendingAction = null;
+
+// ── API helpers ──────────────────────────────────────────────
+
+async function api(url, data) {
+  const opts = data ? { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) } : {};
+  const res = await fetch(url, opts);
+  return res.json();
+}
+
+// ── Screen navigation ────────────────────────────────────────
+
+function hideAll() {
+  for (const id of ['title-screen','select-screen','load-screen','game-screen'])
+    document.getElementById(id).style.display = 'none';
+}
+function showTitle() { hideAll(); document.getElementById('title-screen').style.display = ''; }
+async function showSelectScreen() {
+  hideAll();
+  const el = document.getElementById('select-screen');
+  el.style.display = '';
+  const countries = await api('/api/countries');
+  const grid = document.getElementById('country-grid');
+  grid.innerHTML = countries.map(c => `
+    <div class="country-card" onclick="startGame('${c.code}')">
+      <div class="name">${c.name} <span class="diff-${c.difficulty}" style="font-size:12px;float:right;">${c.difficulty}</span></div>
+      <div class="leader">${c.leader}</div>
+      <div class="stats">
+        <span>GDP <b>$${c.gdp}T</b></span>
+        <span>Mil <b>${c.military}</b></span>
+        <span>Tech <b>${c.tech}</b></span>
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:var(--dim)">${c.traits.join(', ')}</div>
+    </div>
+  `).join('');
+}
+async function showLoadScreen() {
+  hideAll();
+  document.getElementById('load-screen').style.display = '';
+  const saves = await api('/api/saves');
+  const el = document.getElementById('saves-list');
+  if (!saves.length) { el.innerHTML = '<p style="color:var(--dim);text-align:center;">No saved games found.</p>'; return; }
+  el.innerHTML = saves.map(s => `
+    <div class="action-item" onclick="loadGame('${s.filename}')">
+      <div><div class="a-name">${s.country} (${s.player})</div><div class="a-desc">Turn ${s.turn} &middot; ${s.modified}</div></div>
+    </div>
+  `).join('');
+}
+
+// ── Game start / load ────────────────────────────────────────
+
+async function startGame(code) {
+  STATE = await api('/api/new_game', {country_code: code});
+  showGameScreen();
+}
+async function loadGame(filename) {
+  STATE = await api('/api/load', {filename});
+  showGameScreen();
+}
+function showGameScreen() {
+  hideAll();
+  document.getElementById('game-screen').style.display = '';
+  render();
+}
+
+// ── Rendering ────────────────────────────────────────────────
+
+function render() {
+  if (!STATE) return;
+  const p = STATE.countries[STATE.player_code];
+
+  // Top bar
+  document.getElementById('g-nation').textContent = p.name;
+  document.getElementById('g-leader').textContent = `${p.leader.title} ${p.leader.name} (${p.government})`;
+  document.getElementById('g-date').textContent = STATE.date;
+  document.getElementById('g-turn').textContent = `Turn ${STATE.turn}`;
+  document.getElementById('g-ap').textContent = `${STATE.action_points} AP`;
+  document.getElementById('g-rank').textContent = `Rank #${STATE.player_rank}`;
+
+  renderEconomy(p);
+  renderMilitary(p);
+  renderTech(p);
+  renderStatus(p);
+  renderResources(p);
+  renderDiplomacy();
+  renderRankings();
+  renderIntelList();
+  renderActionCats();
+  renderLog();
+}
+
+function bar(value, max=100, color='accent') {
+  const pct = Math.min(100, Math.max(0, value/max*100));
+  const c = pct >= 70 ? 'green' : pct >= 40 ? 'yellow' : 'red';
+  const cl = color === 'auto' ? c : color;
+  return `<div class="bar-wrap"><div class="bar"><div class="bar-fill ${cl}" style="width:${pct}%"></div></div><span style="font-size:12px;min-width:35px;text-align:right;">${value.toFixed?.(1) ?? value}</span></div>`;
+}
+
+function statRow(label, value, extra='') {
+  return `<div class="stat-row"><span class="stat-label">${label}</span><span class="stat-val ${extra}">${value}</span></div>`;
+}
+
+function valClass(val, goodLow, goodHigh) {
+  if (val >= goodLow && val <= goodHigh) return 'good';
+  return 'bad';
+}
+
+function renderEconomy(p) {
+  const e = p.economy;
+  document.getElementById('p-economy').innerHTML = `<h3>Economy</h3>
+    ${statRow('GDP', '$'+e.gdp.toFixed(2)+'T')}
+    ${statRow('Growth', e.gdp_growth.toFixed(1)+'%', e.gdp_growth>0?'good':'bad')}
+    ${statRow('Inflation', e.inflation.toFixed(1)+'%', e.inflation<5?'good':e.inflation<10?'warn':'bad')}
+    ${statRow('Unemployment', e.unemployment.toFixed(1)+'%', e.unemployment<6?'good':e.unemployment<10?'warn':'bad')}
+    ${statRow('Debt/GDP', e.debt_ratio.toFixed(0)+'%', e.debt_ratio<80?'good':e.debt_ratio<120?'warn':'bad')}
+    ${statRow('Trade Balance', (e.trade_balance>=0?'+':'')+e.trade_balance.toFixed(2)+'T', e.trade_balance>=0?'good':'bad')}`;
+}
+
+function renderMilitary(p) {
+  const m = p.military;
+  document.getElementById('p-military').innerHTML = `<h3>Military</h3>
+    <div class="stat-row"><span class="stat-label">Power</span>${bar(m.power, 100, 'auto')}</div>
+    <div class="stat-row"><span class="stat-label">Cyber</span>${bar(m.cyber_capability, 100, 'auto')}</div>
+    ${statRow('Nuclear', m.nuclear?'<span style="color:var(--red);font-weight:700">YES</span>':'No')}
+    ${statRow('Deployed', m.deployed_regions.length ? m.deployed_regions.join(', ') : 'None')}`;
+}
+
+function renderTech(p) {
+  const t = p.tech;
+  document.getElementById('p-tech').innerHTML = `<h3>Technology</h3>
+    <div class="stat-row"><span class="stat-label">Overall</span>${bar(t.level, 100, 'purple')}</div>
+    <div class="stat-row"><span class="stat-label">AI</span>${bar(t.ai_research, 100, 'accent')}</div>
+    <div class="stat-row"><span class="stat-label">Space</span>${bar(t.space, 100, 'accent')}</div>
+    <div class="stat-row"><span class="stat-label">Clean Energy</span>${bar(t.clean_energy, 100, 'green')}</div>
+    <div class="stat-row"><span class="stat-label">Biotech</span>${bar(t.biotech, 100, 'accent')}</div>
+    <div class="stat-row"><span class="stat-label">Semiconductors</span>${bar(t.semiconductors, 100, 'accent')}</div>`;
+}
+
+function renderStatus(p) {
+  document.getElementById('p-status').innerHTML = `<h3>Status</h3>
+    <div class="stat-row"><span class="stat-label">Stability</span>${bar(p.stability, 100, 'auto')}</div>
+    <div class="stat-row"><span class="stat-label">Influence</span>${bar(p.influence, 100, 'auto')}</div>
+    <div class="stat-row"><span class="stat-label">Approval</span>${bar(p.leader.approval, 100, 'auto')}</div>
+    ${statRow('Population', p.population.toFixed(0)+'M')}
+    ${statRow('Alliances', p.alliances.length)}
+    ${statRow('Power Index', p.power_index.toFixed(0))}`;
+}
+
+function renderResources(p) {
+  const r = p.resources;
+  document.getElementById('p-resources').innerHTML = `<h3>Resources</h3>
+    <div class="stat-row"><span class="stat-label">Oil</span>${bar(r.oil, 100, 'auto')}</div>
+    <div class="stat-row"><span class="stat-label">Natural Gas</span>${bar(r.natural_gas, 100, 'auto')}</div>
+    <div class="stat-row"><span class="stat-label">Minerals</span>${bar(r.minerals, 100, 'auto')}</div>
+    <div class="stat-row"><span class="stat-label">Food</span>${bar(r.food, 100, 'green')}</div>
+    <div class="stat-row"><span class="stat-label">Manufacturing</span>${bar(r.manufacturing, 100, 'accent')}</div>`;
+}
+
+function relClass(val) {
+  if (val >= 50) return 'rel-good';
+  if (val >= 20) return 'rel-warm';
+  if (val >= -20) return 'rel-neutral';
+  if (val >= -50) return 'rel-tense';
+  return 'rel-hostile';
+}
+function relLabel(val) {
+  if (val >= 50) return 'Friendly';
+  if (val >= 20) return 'Warm';
+  if (val >= -20) return 'Neutral';
+  if (val >= -50) return 'Tense';
+  return 'Hostile';
+}
+
+function renderDiplomacy() {
+  const p = STATE.countries[STATE.player_code];
+  const rels = Object.entries(p.relationships)
+    .filter(([c]) => STATE.countries[c])
+    .sort((a,b) => b[1]-a[1]);
+  let html = '<h3>Diplomatic Relations</h3><table class="rankings-table"><tr><th>Nation</th><th>Relation</th><th>Status</th><th>Shared Alliances</th></tr>';
+  for (const [code, val] of rels) {
+    const c = STATE.countries[code];
+    const common = p.alliances.filter(a => c.alliances.includes(a));
+    const sanctions = (p.sanctions_on.includes(code)?'<span style="color:var(--red)"> [sanctioning]</span>':'') +
+                      (p.sanctioned_by.includes(code)?'<span style="color:var(--red)"> [sanctioned by]</span>':'');
+    html += `<tr><td>${c.name}</td><td class="${relClass(val)}">${val>=0?'+':''}${val.toFixed(0)}</td><td>${relLabel(val)}${sanctions}</td><td style="color:var(--dim)">${common.join(', ')||'-'}</td></tr>`;
+  }
+  html += '</table>';
+  document.getElementById('p-diplomacy').innerHTML = html;
+}
+
+function renderRankings() {
+  let html = '<h3>World Power Rankings</h3><table class="rankings-table"><tr><th>#</th><th>Nation</th><th>Power</th><th>GDP</th><th>Mil</th><th>Tech</th><th>Stab</th></tr>';
+  STATE.rankings.forEach((r, i) => {
+    const c = STATE.countries[r.code];
+    const cls = r.code === STATE.player_code ? 'player-row' : '';
+    html += `<tr class="${cls}"><td>${i+1}</td><td>${c.name}</td><td>${r.power}</td><td>$${c.economy.gdp.toFixed(1)}T</td><td>${c.military.power.toFixed(0)}</td><td>${c.tech.level.toFixed(0)}</td><td>${c.stability.toFixed(0)}</td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('p-rankings').innerHTML = html;
+}
+
+function renderIntelList() {
+  const el = document.getElementById('intel-list');
+  let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;">';
+  for (const [code, c] of Object.entries(STATE.countries)) {
+    if (code === STATE.player_code) continue;
+    const rel = STATE.countries[STATE.player_code].relationships[code] || 0;
+    html += `<div class="action-item" onclick="showIntel('${code}')"><div><div class="a-name">${c.name}</div><div class="a-desc ${relClass(rel)}">${rel>=0?'+':''}${rel.toFixed(0)} ${relLabel(rel)}</div></div></div>`;
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function showIntel(code) {
+  const c = STATE.countries[code];
+  const p = STATE.countries[STATE.player_code];
+  const rel = p.relationships[code] || 0;
+  const el = document.getElementById('intel-detail');
+  el.style.display = '';
+  el.innerHTML = `<h3>${c.name} (${c.government})</h3>
+    <div class="dash" style="grid-template-columns:1fr 1fr;">
+      <div>
+        ${statRow('Leader', c.leader.title+' '+c.leader.name)}
+        ${statRow('Traits', c.leader.traits.join(', '))}
+        ${statRow('Region', c.region)}
+        ${statRow('Population', c.population+'M')}
+        ${statRow('Relation', `<span class="${relClass(rel)}">${rel>=0?'+':''}${rel.toFixed(0)}</span>`)}
+      </div>
+      <div>
+        ${statRow('GDP', '$'+c.economy.gdp.toFixed(2)+'T')}
+        ${statRow('Growth', c.economy.gdp_growth.toFixed(1)+'%')}
+        ${statRow('Military', c.military.power.toFixed(0))}
+        ${statRow('Tech', c.tech.level.toFixed(0))}
+        ${statRow('Stability', c.stability.toFixed(0))}
+        ${statRow('Influence', c.influence.toFixed(0))}
+        ${statRow('Nuclear', c.military.nuclear?'Yes':'No')}
+      </div>
+    </div>
+    <div style="margin-top:8px;font-size:12px;color:var(--dim)">Traits: ${c.traits.join(', ')}</div>
+    <div style="margin-top:4px;font-size:12px;color:var(--dim)">Alliances: ${c.alliances.join(', ')||'None'}</div>`;
+}
+
+// ── Actions ──────────────────────────────────────────────────
+
+function renderActionCats() {
+  const el = document.getElementById('action-cats');
+  const cats = Object.keys(STATE.actions);
+  el.innerHTML = cats.map(cat =>
+    `<button class="cat-btn" onclick="showActions('${cat}')">${cat}</button>`
+  ).join('');
+}
+
+function showActions(cat) {
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  const actions = STATE.actions[cat];
+  const el = document.getElementById('action-list');
+  el.innerHTML = `<h3>${cat}</h3>` + actions.map(a => {
+    const disabled = a.cost > STATE.action_points ? 'disabled' : '';
+    return `<div class="action-item ${disabled}" onclick="startAction('${a.id}', ${JSON.stringify(a)})">
+      <div><div class="a-name">${a.name}</div><div class="a-desc">${a.desc}</div></div>
+      <div class="a-cost">${a.cost} AP</div>
+    </div>`;
+  }).join('');
+}
+
+function startAction(actionId, actionDef) {
+  pendingAction = {id: actionId, params: {}};
+  if (actionDef.needs_target) {
+    showTargetModal();
+  } else if (actionDef.needs_region) {
+    showRegionModal();
+  } else if (actionDef.needs_field) {
+    showFieldModal();
+  } else {
+    executeAction();
+  }
+}
+
+function showTargetModal() {
+  const p = STATE.countries[STATE.player_code];
+  document.getElementById('modal-title').textContent = 'Select Target Nation';
+  let html = '';
+  const rels = Object.entries(p.relationships)
+    .filter(([c]) => STATE.countries[c])
+    .sort((a,b) => b[1]-a[1]);
+  for (const [code, val] of rels) {
+    const c = STATE.countries[code];
+    html += `<div class="modal-item" onclick="selectTarget('${code}')">
+      <span class="mi-name">${c.name}</span>
+      <span class="mi-rel ${relClass(val)}">${val>=0?'+':''}${val.toFixed(0)} ${relLabel(val)}</span>
+    </div>`;
+  }
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal').style.display = '';
+}
+
+function showRegionModal() {
+  document.getElementById('modal-title').textContent = 'Select Region';
+  const p = STATE.countries[STATE.player_code];
+  let html = '';
+  for (const region of STATE.regions) {
+    const deployed = p.military.deployed_regions.includes(region) ? ' <span style="color:var(--yellow)">(deployed)</span>' : '';
+    html += `<div class="modal-item" onclick="selectRegion('${region}')">
+      <span class="mi-name">${region}${deployed}</span>
+    </div>`;
+  }
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal').style.display = '';
+}
+
+function showFieldModal() {
+  document.getElementById('modal-title').textContent = 'Select Research Field';
+  let html = '';
+  for (const [key, name] of Object.entries(STATE.tech_fields)) {
+    const val = STATE.countries[STATE.player_code].tech[key === 'ai' ? 'ai_research' : key === 'energy' ? 'clean_energy' : key === 'bio' ? 'biotech' : key === 'chips' ? 'semiconductors' : key];
+    html += `<div class="modal-item" onclick="selectField('${key}')">
+      <span class="mi-name">${name}</span>
+      <span style="color:var(--dim)">${val?.toFixed(0) ?? '?'}</span>
+    </div>`;
+  }
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal').style.display = '';
+}
+
+function selectTarget(code) { pendingAction.params.target_code = code; closeModal(); executeAction(); }
+function selectRegion(region) { pendingAction.params.region = region; closeModal(); executeAction(); }
+function selectField(field) { pendingAction.params.field = field; closeModal(); executeAction(); }
+function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
+async function executeAction() {
+  const payload = {action_id: pendingAction.id, ...pendingAction.params};
+  const res = await api('/api/action', payload);
+  if (res.error) { showToast(res.error); return; }
+  STATE = res.state;
+  render();
+  showToast(res.result);
+  pendingAction = null;
+}
+
+function showToast(msg) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+function renderLog() {
+  const el = document.getElementById('action-log');
+  if (!STATE.turn_log.length) { el.style.display = 'none'; return; }
+  el.style.display = '';
+  el.innerHTML = `<h3>This Turn</h3>` + STATE.turn_log.map(l => `<div class="log-entry">${l}</div>`).join('');
+}
+
+// ── End Turn ─────────────────────────────────────────────────
+
+async function endTurn() {
+  document.getElementById('btn-end-turn').disabled = true;
+  document.getElementById('btn-end-turn').textContent = 'Processing...';
+  const res = await api('/api/end_turn', {});
+  STATE = res.state;
+  document.getElementById('btn-end-turn').disabled = false;
+  document.getElementById('btn-end-turn').textContent = 'End Turn';
+
+  // Check victory/defeat
+  if (res.victory) {
+    showVictory(res.victory);
+    return;
+  }
+  if (res.defeat) {
+    showDefeat(res.defeat);
+    return;
+  }
+
+  // Show turn result
+  showTurnResultOverlay(res);
+}
+
+function showTurnResultOverlay(res) {
+  const el = document.getElementById('turn-result');
+  el.style.display = '';
+  document.getElementById('tr-title').textContent = `World News — ${STATE.date}`;
+
+  let html = '';
+
+  // AI headlines
+  if (res.ai_headlines && res.ai_headlines.length) {
+    html += '<div style="margin-bottom:16px;"><h4 style="color:var(--dim);margin-bottom:8px;">Other Nations</h4>';
+    for (const h of res.ai_headlines) {
+      html += `<div class="news-item"><span style="font-weight:600;color:var(--accent);">${h.country}:</span> ${h.action}</div>`;
+    }
+    html += '</div>';
+  }
+
+  // Events
+  if (res.events && res.events.length) {
+    html += '<div><h4 style="color:var(--red);margin-bottom:8px;">Events</h4>';
+    for (const e of res.events) {
+      const isPlayer = e.country_code === STATE.player_code;
+      const cls = isPlayer ? 'player-news' : '';
+      html += `<div class="news-item ${cls}"><div class="n-headline">${e.headline}</div>`;
+      if (e.description) html += `<div class="n-detail">${e.description}</div>`;
+      if (e.affected && e.affected.length) html += `<div class="n-detail">Affected: ${e.affected.slice(0,6).join(', ')}</div>`;
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  if (!html) html = '<p style="color:var(--dim);text-align:center;">A quiet month on the world stage.</p>';
+
+  document.getElementById('tr-content').innerHTML = html;
+}
+
+function closeTurnResult() {
+  document.getElementById('turn-result').style.display = 'none';
+  render();
+}
+
+function showVictory(type) {
+  const msgs = {
+    economic: 'Your GDP dominates the global economy!',
+    military: "The world trembles before your armed forces!",
+    diplomatic: 'Your diplomatic network spans the world!',
+    technological: "You've achieved breakthroughs in every field!",
+    domination: 'No nation comes close to your combined strength!',
+  };
+  document.getElementById('game-screen').innerHTML = `
+    <div class="victory-screen">
+      <h1>VICTORY!</h1>
+      <h2 style="color:var(--accent);text-transform:capitalize;">${type} Victory</h2>
+      <p style="color:var(--dim);margin:20px 0;">${msgs[type]||'You win!'}</p>
+      <p style="color:var(--dim);">Turns: ${STATE.turn} &middot; ${STATE.date}</p>
+      <button class="btn" style="margin-top:30px;" onclick="location.reload()">Play Again</button>
+    </div>`;
+}
+
+function showDefeat(msg) {
+  document.getElementById('game-screen').innerHTML = `
+    <div class="defeat-screen">
+      <h1>GAME OVER</h1>
+      <p style="color:var(--dim);margin:20px 0;font-size:18px;">${msg}</p>
+      <button class="btn-red" style="margin-top:30px;" onclick="location.reload()">Try Again</button>
+    </div>`;
+}
+
+// ── Tabs ─────────────────────────────────────────────────────
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ── Save & Quit ──────────────────────────────────────────────
+
+function saveAndQuit() {
+  showToast('Game auto-saved. You can close this tab.');
+}
+
+// ── Init ─────────────────────────────────────────────────────
+
+// Check if we have an active game session
+(async () => {
+  try {
+    const state = await api('/api/state');
+    if (state && !state.error) {
+      STATE = state;
+      showGameScreen();
+      return;
+    }
+  } catch(e) {}
+  showTitle();
+})();
+</script>
+</body>
+</html>
