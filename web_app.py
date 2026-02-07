@@ -8,6 +8,7 @@ persistent game ID stored in a cookie, mapped to a save file.
 from __future__ import annotations
 import json
 import os
+import random
 from pathlib import Path
 
 from flask import Flask, render_template, jsonify, request, session
@@ -44,6 +45,7 @@ def _save_session_state(game: dict):
         "action_points": game["action_points"],
         "turn_phase": game["turn_phase"],
         "turn_log": game["turn_log"],
+        "ai_ap_used": game.get("ai_ap_used", {}),
     }
     with open(path, "w") as f:
         json.dump(data, f)
@@ -75,6 +77,7 @@ def _load_session_state() -> dict | None:
         "turn_events": [],
         "turn_ai_actions": {},
         "turn_log": session_meta.get("turn_log", []),
+        "ai_ap_used": session_meta.get("ai_ap_used", {}),
     }
 
 
@@ -100,6 +103,7 @@ def _create_game(player_code: str) -> dict:
         "turn_events": [],
         "turn_ai_actions": {},
         "turn_log": [],
+        "ai_ap_used": {},
     }
     sid = os.urandom(8).hex()
     session["game_id"] = sid
@@ -187,6 +191,55 @@ def _world_state(game: dict) -> dict:
         "actions": ACTION_CATEGORIES,
         "tech_fields": {k: v[1] for k, v in TECH_FIELDS.items()},
         "regions": sorted(set(c.region for c in world.countries.values())),
+    }
+
+
+def _trigger_ai_reaction(game: dict) -> dict | None:
+    """Pick one AI nation to take a single action. Returns a reaction dict or None."""
+    world = game["world"]
+    player = world.get_player()
+    ai_ap_used = game.setdefault("ai_ap_used", {})
+
+    # Build list of AI nations that still have AP left (each gets 3 per turn)
+    candidates = []
+    weights = []
+    for code, ai in game["ai_players"].items():
+        used = ai_ap_used.get(code, 0)
+        if used >= 3:
+            continue
+        c = world.countries[code]
+        # Weight: powerful nations and those with strong player relationships react more
+        w = c.power_index() / 40.0 + abs(player.relationships.get(code, 0)) / 40.0
+        candidates.append((code, ai))
+        weights.append(max(0.1, w))
+
+    if not candidates:
+        return None
+
+    # Pick a reactor
+    (reactor_code, reactor_ai), = random.choices(candidates, weights=weights, k=1)
+    reactor_country = world.countries[reactor_code]
+
+    # Have the AI take exactly 1 action
+    results = reactor_ai.take_turn(world, action_points=1)
+    ai_ap_used[reactor_code] = ai_ap_used.get(reactor_code, 0) + 1
+
+    if not results:
+        return None
+
+    action_text = results[0]
+
+    # Check if this action directly affects the player
+    affects_player = (
+        player.name.lower() in action_text.lower()
+        or player.code in action_text
+    )
+
+    return {
+        "country": reactor_country.name,
+        "code": reactor_code,
+        "action": action_text,
+        "affects_player": affects_player,
     }
 
 
@@ -326,8 +379,15 @@ def do_action():
     game["action_points"] -= cost
     game["turn_log"].append(result)
 
+    # AI reaction: one nation takes an action after the player
+    ai_reaction = _trigger_ai_reaction(game)
+
     _save_session_state(game)
-    return jsonify({"result": result, "state": _world_state(game)})
+    return jsonify({
+        "result": result,
+        "state": _world_state(game),
+        "ai_reaction": ai_reaction,
+    })
 
 
 @app.route("/api/end_turn", methods=["POST"])
@@ -337,11 +397,16 @@ def end_turn():
         return jsonify({"error": "no_game"}), 404
     world = game["world"]
 
-    # AI turns
+    # AI turns — give each nation only their remaining AP (some already reacted)
+    ai_ap_used = game.get("ai_ap_used", {})
     ai_actions = {}
     for code, ai in game["ai_players"].items():
-        results = ai.take_turn(world, action_points=3)
-        ai_actions[code] = results
+        remaining_ap = max(0, 3 - ai_ap_used.get(code, 0))
+        if remaining_ap > 0:
+            results = ai.take_turn(world, action_points=remaining_ap)
+            ai_actions[code] = results
+        else:
+            ai_actions[code] = []
     game["turn_ai_actions"] = ai_actions
 
     # Collect noteworthy AI actions
@@ -383,6 +448,7 @@ def end_turn():
     # Reset for next turn
     game["action_points"] = 4
     game["turn_log"] = []
+    game["ai_ap_used"] = {}
 
     _save_session_state(game)
 
@@ -421,6 +487,7 @@ def load():
         "turn_events": [],
         "turn_ai_actions": {},
         "turn_log": [],
+        "ai_ap_used": {},
     }
     sid = os.urandom(8).hex()
     session["game_id"] = sid
