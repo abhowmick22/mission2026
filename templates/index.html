@@ -262,13 +262,16 @@ button:hover { filter: brightness(1.15); }
 /* ── Turn result overlay ────────────────────────────── */
 #turn-result {
   display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7);
-  z-index: 200; overflow-y: auto;
+  z-index: 200; overflow-y: auto; animation: fadeIn .3s;
 }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 #turn-result .inner {
   max-width: 700px; margin: 40px auto; background: var(--bg2);
   border: 1px solid var(--border); border-radius: 14px; padding: 30px;
 }
 #turn-result h2 { text-align: center; margin-bottom: 20px; color: var(--accent); }
+.tr-progress { height: 3px; background: var(--bg3); border-radius: 2px; margin-top: 16px; overflow: hidden; }
+.tr-progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 1s linear; }
 
 /* ── Rankings sidebar ───────────────────────────────── */
 .rankings-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -316,7 +319,6 @@ button:hover { filter: brightness(1.15); }
   .quick-stats { grid-template-columns: repeat(3, 1fr); }
   #title-screen h1 { font-size: 32px; letter-spacing: 8px; }
   .bottom-bar { position: sticky; bottom: 0; background: var(--bg); padding: 12px 0; z-index: 50; }
-  #btn-end-turn { width: 100%; padding: 14px; font-size: 16px; }
 }
 
 /* ── Tabs ───────────────────────────────────────────── */
@@ -491,7 +493,6 @@ button:hover { filter: brightness(1.15); }
 
     <!-- Bottom actions -->
     <div class="bottom-bar">
-      <button class="btn" id="btn-end-turn" onclick="endTurn()">End Turn</button>
       <button class="btn-dim btn-sm" onclick="saveAndQuit()">Save & Quit</button>
     </div>
   </div>
@@ -501,8 +502,9 @@ button:hover { filter: brightness(1.15); }
     <div class="inner">
       <h2 id="tr-title"></h2>
       <div id="tr-content"></div>
-      <div style="text-align:center; margin-top:20px;">
-        <button class="btn" onclick="closeTurnResult()">Continue</button>
+      <div class="tr-progress"><div class="tr-progress-fill" id="tr-progress-fill" style="width:100%"></div></div>
+      <div style="text-align:center; margin-top:10px;">
+        <button class="btn-dim btn-sm" onclick="closeTurnResult()">Skip</button>
       </div>
     </div>
   </div>
@@ -636,12 +638,15 @@ function render() {
   // Turn guide
   document.getElementById('tg-ap').textContent = STATE.action_points;
   const guide = document.getElementById('turn-guide');
+  const endBtn = document.getElementById('btn-end-turn-top');
   if (STATE.action_points === 0) {
     guide.style.borderColor = 'var(--orange)';
-    guide.querySelector('.tg-hint').textContent = 'No actions left — tap End Turn to advance';
+    guide.querySelector('.tg-hint').textContent = 'Ending turn...';
+    endBtn.style.display = 'none';
   } else {
     guide.style.borderColor = 'var(--accent)';
-    guide.querySelector('.tg-hint').textContent = 'Choose actions below, then tap End Turn';
+    guide.querySelector('.tg-hint').textContent = 'Choose actions below, then End Turn';
+    endBtn.style.display = 'block';
   }
 
   // Quick stats bar
@@ -947,6 +952,11 @@ async function executeAction() {
   render();
   showActionResult(res.result, computeChanges(before, after), false, res.ai_reaction);
   pendingAction = null;
+
+  // Auto-end turn when AP runs out
+  if (STATE.action_points <= 0) {
+    setTimeout(() => endTurn(), 2000);
+  }
 }
 
 function computeChanges(before, after) {
@@ -1018,15 +1028,21 @@ function renderLog() {
 
 // ── End Turn ─────────────────────────────────────────────────
 
+let turnEnding = false;
+
 async function endTurn() {
-  const btns = [document.getElementById('btn-end-turn'), document.getElementById('btn-end-turn-top')];
-  btns.forEach(b => { if(b) { b.disabled = true; b.textContent = 'Processing...'; }});
+  if (turnEnding) return;
+  turnEnding = true;
+  const guide = document.getElementById('turn-guide');
+  guide.querySelector('.tg-hint').textContent = 'Processing world events...';
+  guide.style.borderColor = 'var(--orange)';
+  document.getElementById('btn-end-turn-top').style.display = 'none';
   // Clear action result
   document.getElementById('action-result').style.display = 'none';
   prevStats = null;
   const res = await api('/api/end_turn', {});
   STATE = res.state;
-  btns.forEach(b => { if(b) { b.disabled = false; b.textContent = 'End Turn'; }});
+  turnEnding = false;
 
   // Check victory/defeat
   if (res.victory) {
@@ -1038,9 +1054,11 @@ async function endTurn() {
     return;
   }
 
-  // Show turn result
+  // Show turn result then auto-advance
   showTurnResultOverlay(res);
 }
+
+let turnResultTimer = null;
 
 function showTurnResultOverlay(res) {
   const el = document.getElementById('turn-result');
@@ -1048,12 +1066,14 @@ function showTurnResultOverlay(res) {
   document.getElementById('tr-title').textContent = `World News — ${STATE.date}`;
 
   let html = '';
+  let contentCount = 0;
 
   // AI headlines
   if (res.ai_headlines && res.ai_headlines.length) {
     html += '<div style="margin-bottom:16px;"><h4 style="color:var(--dim);margin-bottom:8px;">Other Nations</h4>';
     for (const h of res.ai_headlines) {
       html += `<div class="news-item"><span style="font-weight:600;color:var(--accent);">${h.country}:</span> ${h.action}</div>`;
+      contentCount++;
     }
     html += '</div>';
   }
@@ -1068,6 +1088,7 @@ function showTurnResultOverlay(res) {
       if (e.description) html += `<div class="n-detail">${e.description}</div>`;
       if (e.affected && e.affected.length) html += `<div class="n-detail">Affected: ${e.affected.slice(0,6).join(', ')}</div>`;
       html += '</div>';
+      contentCount++;
     }
     html += '</div>';
   }
@@ -1075,9 +1096,24 @@ function showTurnResultOverlay(res) {
   if (!html) html = '<p style="color:var(--dim);text-align:center;">A quiet month on the world stage.</p>';
 
   document.getElementById('tr-content').innerHTML = html;
+
+  // Auto-dismiss: more content = more time, minimum 3s, max 8s
+  const dismissSecs = Math.min(8, Math.max(3, contentCount * 2));
+  const bar = document.getElementById('tr-progress-fill');
+  bar.style.transition = 'none';
+  bar.style.width = '100%';
+  // Force reflow so the transition starts from 100%
+  bar.offsetWidth;
+  bar.style.transition = `width ${dismissSecs}s linear`;
+  bar.style.width = '0%';
+
+  clearTimeout(turnResultTimer);
+  turnResultTimer = setTimeout(() => closeTurnResult(), dismissSecs * 1000);
 }
 
 function closeTurnResult() {
+  clearTimeout(turnResultTimer);
+  turnResultTimer = null;
   document.getElementById('turn-result').style.display = 'none';
   prevStats = null;
   document.getElementById('action-result').style.display = 'none';
