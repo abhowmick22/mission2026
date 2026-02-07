@@ -144,18 +144,22 @@ button:hover { filter: brightness(1.15); }
 .action-result .ar-chip.neutral { color: var(--dim); }
 .action-result .ar-dismiss { text-align: right; margin-top: 8px; }
 
-/* ── AI reaction card ──────────────────────────────── */
-.ai-reaction {
+/* ── World reaction card (country actions + world events) ── */
+.world-reaction {
   background: var(--bg2); border: 1px solid var(--border); border-left: 3px solid var(--purple);
   border-radius: 10px; padding: 14px 16px; margin-top: 8px; animation: fadeInUp .3s;
 }
-.ai-reaction.ai-reaction-alert { border-left-color: var(--orange); border-color: var(--orange); }
-.ai-reaction-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.ai-reaction-flag { font-weight: 700; color: var(--purple); font-size: 14px; }
-.ai-reaction-alert .ai-reaction-flag { color: var(--orange); }
-.ai-reaction-label { font-size: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; }
-.ai-reaction-text { font-size: 14px; line-height: 1.4; color: var(--text); }
-.ai-reaction-warn {
+.world-reaction.wr-alert { border-left-color: var(--orange); border-color: var(--orange); }
+.world-reaction.wr-event { border-left-color: var(--accent); }
+.world-reaction.wr-event.wr-alert { border-left-color: var(--orange); border-color: var(--orange); }
+.wr-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.wr-source { font-weight: 700; color: var(--purple); font-size: 14px; }
+.wr-event .wr-source { color: var(--accent); }
+.wr-alert .wr-source { color: var(--orange); }
+.wr-label { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; background: var(--bg3); padding: 2px 8px; border-radius: 4px; }
+.wr-text { font-size: 14px; line-height: 1.4; color: var(--text); }
+.wr-desc { font-size: 12px; color: var(--dim); margin-top: 4px; line-height: 1.3; }
+.wr-warn {
   margin-top: 6px; font-size: 12px; font-weight: 700; color: var(--orange);
   padding: 4px 10px; background: rgba(255,167,38,.1); border-radius: 6px; display: inline-block;
 }
@@ -988,17 +992,28 @@ function showActionResult(text, changes, isError, aiReaction) {
   }
   html += '</div>';
 
-  // AI reaction
+  // World reaction (country action or world event)
   if (aiReaction) {
-    const highlight = aiReaction.affects_player ? ' ai-reaction-alert' : '';
-    html += `<div class="ai-reaction${highlight}">`;
-    html += `<div class="ai-reaction-header">`;
-    html += `<span class="ai-reaction-flag">${aiReaction.country}</span>`;
-    html += `<span class="ai-reaction-label">reacts</span>`;
-    html += `</div>`;
-    html += `<div class="ai-reaction-text">${aiReaction.action}</div>`;
+    const alert = aiReaction.affects_player ? ' wr-alert' : '';
+    if (aiReaction.type === 'world_event') {
+      html += `<div class="world-reaction wr-event${alert}">`;
+      html += `<div class="wr-header">`;
+      html += `<span class="wr-label">World Event</span>`;
+      html += `</div>`;
+      html += `<div class="wr-text">${aiReaction.headline}</div>`;
+      if (aiReaction.description) {
+        html += `<div class="wr-desc">${aiReaction.description}</div>`;
+      }
+    } else {
+      html += `<div class="world-reaction${alert}">`;
+      html += `<div class="wr-header">`;
+      html += `<span class="wr-source">${aiReaction.country}</span>`;
+      html += `<span class="wr-label">reacts</span>`;
+      html += `</div>`;
+      html += `<div class="wr-text">${aiReaction.action}</div>`;
+    }
     if (aiReaction.affects_player) {
-      html += `<div class="ai-reaction-warn">This affects your nation!</div>`;
+      html += `<div class="wr-warn">This affects your nation!</div>`;
     }
     html += `</div>`;
   }

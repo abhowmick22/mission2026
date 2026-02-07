@@ -194,7 +194,298 @@ def _world_state(game: dict) -> dict:
     }
 
 
-def _trigger_ai_reaction(game: dict) -> dict | None:
+def _clamp(v: float, lo: float = 0.0, hi: float = 100.0) -> float:
+    return max(lo, min(hi, v))
+
+
+def _generate_contextual_event(game: dict) -> dict | None:
+    """Generate a world event relevant to the player's current situation."""
+    world = game["world"]
+    p = world.get_player()
+
+    # Build pool of candidate events based on game state
+    pool = []  # list of (weight, event_dict)
+
+    # ── Economy-driven events ──────────────────────────────────────────────
+    if p.economy.gdp_growth > 3:
+        pool.append((1.5, {
+            "headline": f"Foreign investors flock to {p.name}",
+            "description": "Strong economic performance attracts international capital.",
+            "apply": lambda: (
+                setattr(p.economy, 'gdp_growth', p.economy.gdp_growth + random.uniform(0.2, 0.5)),
+                setattr(p, 'influence', _clamp(p.influence + random.uniform(1, 3))),
+            ),
+        }))
+    if p.economy.gdp_growth < 0.5:
+        pool.append((2.0, {
+            "headline": f"Credit agencies downgrade {p.name} outlook",
+            "description": "Sluggish growth raises concerns about economic trajectory.",
+            "apply": lambda: (
+                setattr(p, 'influence', _clamp(p.influence - random.uniform(1, 3))),
+                setattr(p.economy, 'debt_ratio', p.economy.debt_ratio + random.uniform(0.5, 1.5)),
+            ),
+        }))
+    if p.economy.inflation > 8:
+        pool.append((2.5, {
+            "headline": f"Cost of living protests erupt in {p.name}",
+            "description": "Rising prices drive citizens to the streets.",
+            "apply": lambda: (
+                setattr(p, 'stability', _clamp(p.stability - random.uniform(2, 5))),
+                setattr(p.leader, 'approval', _clamp(p.leader.approval - random.uniform(2, 4))),
+            ),
+        }))
+    if p.economy.debt_ratio > 100:
+        pool.append((1.8, {
+            "headline": f"Bond markets jitter over {p.name}'s debt burden",
+            "description": "Investors demand higher yields on government bonds.",
+            "apply": lambda: (
+                setattr(p.economy, 'inflation', p.economy.inflation + random.uniform(0.3, 0.8)),
+                setattr(p.economy, 'gdp_growth', p.economy.gdp_growth - random.uniform(0.1, 0.3)),
+            ),
+        }))
+    if p.economy.unemployment > 8:
+        pool.append((1.5, {
+            "headline": f"Youth unemployment crisis deepens in {p.name}",
+            "description": "Lack of jobs fuels social unrest among younger generation.",
+            "apply": lambda: (
+                setattr(p, 'stability', _clamp(p.stability - random.uniform(1, 3))),
+                setattr(p.leader, 'approval', _clamp(p.leader.approval - random.uniform(1, 3))),
+            ),
+        }))
+    if p.economy.trade_balance > 0.05:
+        pool.append((1.0, {
+            "headline": f"{p.name}'s trade surplus draws envy and ire",
+            "description": "Trading partners accuse your country of unfair practices.",
+            "apply": lambda: [
+                p.relationships.__setitem__(c, _clamp(p.relationships.get(c, 0) - random.uniform(2, 5), -100, 100))
+                for c in random.sample(list(p.relationships.keys()), min(2, len(p.relationships)))
+            ],
+        }))
+
+    # ── Military-driven events ─────────────────────────────────────────────
+    if p.military.power > 70:
+        pool.append((1.2, {
+            "headline": f"Global powers alarmed by {p.name}'s military expansion",
+            "description": "Regional neighbors call for arms control talks.",
+            "apply": lambda: (
+                setattr(p, 'influence', _clamp(p.influence + random.uniform(1, 2))),
+                [p.relationships.__setitem__(c, _clamp(p.relationships.get(c, 0) - random.uniform(2, 4), -100, 100))
+                 for c in random.sample(list(p.relationships.keys()), min(3, len(p.relationships)))],
+            ),
+        }))
+    if p.military.deployed_regions:
+        region = random.choice(p.military.deployed_regions)
+        pool.append((1.5, {
+            "headline": f"Tensions flare in {region} over {p.name}'s military presence",
+            "description": "Local factions demand withdrawal of foreign forces.",
+            "apply": lambda: (
+                setattr(p, 'stability', _clamp(p.stability - random.uniform(1, 2))),
+                setattr(p.economy, 'debt_ratio', p.economy.debt_ratio + random.uniform(0.2, 0.5)),
+            ),
+        }))
+    if p.military.cyber_capability > 60:
+        pool.append((1.0, {
+            "headline": f"Major cyberattack targets {p.name}'s infrastructure",
+            "description": "State-sponsored hackers probe critical systems.",
+            "apply": lambda: (
+                setattr(p, 'stability', _clamp(p.stability - random.uniform(1, 3))),
+                setattr(p.military, 'cyber_capability', _clamp(p.military.cyber_capability + random.uniform(1, 2))),
+            ),
+        }))
+
+    # ── Tech-driven events ─────────────────────────────────────────────────
+    if p.tech.ai_research > 60:
+        pool.append((1.3, {
+            "headline": f"AI breakthrough from {p.name} stuns the world",
+            "description": "New capabilities raise both excitement and regulatory alarms.",
+            "apply": lambda: (
+                setattr(p.tech, 'ai_research', _clamp(p.tech.ai_research + random.uniform(1, 3))),
+                setattr(p, 'influence', _clamp(p.influence + random.uniform(1, 3))),
+            ),
+        }))
+    if p.tech.semiconductors > 55:
+        pool.append((1.0, {
+            "headline": f"{p.name}'s chip industry attracts supply chain partners",
+            "description": "Global firms rush to secure semiconductor agreements.",
+            "apply": lambda: (
+                setattr(p.resources, 'manufacturing', _clamp(p.resources.manufacturing + random.uniform(1, 3))),
+                setattr(p.economy, 'gdp_growth', p.economy.gdp_growth + random.uniform(0.1, 0.4)),
+            ),
+        }))
+    if p.tech.level < 30:
+        pool.append((1.5, {
+            "headline": f"Brain drain threatens {p.name}'s future",
+            "description": "Top scientists and engineers emigrate for better opportunities.",
+            "apply": lambda: (
+                setattr(p.tech, 'level', _clamp(p.tech.level - random.uniform(0.5, 1.5))),
+                setattr(p.economy, 'gdp_growth', p.economy.gdp_growth - random.uniform(0.1, 0.2)),
+            ),
+        }))
+    if p.tech.clean_energy > 50:
+        pool.append((1.0, {
+            "headline": f"{p.name} hailed as clean energy leader at climate summit",
+            "description": "Green transition draws international praise and investment.",
+            "apply": lambda: (
+                setattr(p, 'influence', _clamp(p.influence + random.uniform(2, 4))),
+                setattr(p.leader, 'approval', _clamp(p.leader.approval + random.uniform(1, 2))),
+            ),
+        }))
+
+    # ── Stability-driven events ────────────────────────────────────────────
+    if p.stability < 35:
+        pool.append((2.5, {
+            "headline": f"Opposition protests intensify across {p.name}",
+            "description": "Demonstrators demand government accountability.",
+            "apply": lambda: (
+                setattr(p.leader, 'approval', _clamp(p.leader.approval - random.uniform(2, 5))),
+                setattr(p, 'stability', _clamp(p.stability - random.uniform(1, 3))),
+            ),
+        }))
+    if p.stability > 75:
+        pool.append((1.0, {
+            "headline": f"Political stability makes {p.name} a business magnet",
+            "description": "Multinational corporations announce new investments.",
+            "apply": lambda: (
+                setattr(p.economy, 'gdp_growth', p.economy.gdp_growth + random.uniform(0.2, 0.5)),
+                setattr(p, 'influence', _clamp(p.influence + random.uniform(1, 2))),
+            ),
+        }))
+    if p.leader.approval < 30:
+        pool.append((2.0, {
+            "headline": f"Leadership crisis looms in {p.name}",
+            "description": "Polls show historic disapproval. Rivals sense opportunity.",
+            "apply": lambda: (
+                setattr(p, 'stability', _clamp(p.stability - random.uniform(2, 4))),
+                setattr(p, 'influence', _clamp(p.influence - random.uniform(1, 2))),
+            ),
+        }))
+
+    # ── Relationship-driven events ─────────────────────────────────────────
+    # Rival provocation
+    rivals = [(c, v) for c, v in p.relationships.items()
+              if v < -30 and c in world.countries]
+    if rivals:
+        rival_code, rival_rel = random.choice(rivals)
+        rival = world.countries[rival_code]
+        pool.append((2.0, {
+            "headline": f"{rival.name} escalates rhetoric against {p.name}",
+            "description": f"Diplomatic tensions worsen as {rival.leader.name} issues sharp warnings.",
+            "apply": lambda: (
+                p.relationships.__setitem__(rival_code, _clamp(rival_rel - random.uniform(3, 8), -100, 100)),
+                setattr(p, 'stability', _clamp(p.stability - random.uniform(1, 2))),
+            ),
+        }))
+    # Ally cooperation
+    friends = [(c, v) for c, v in p.relationships.items()
+               if v > 30 and c in world.countries]
+    if friends:
+        friend_code, friend_rel = random.choice(friends)
+        friend = world.countries[friend_code]
+        pool.append((1.5, {
+            "headline": f"{friend.name} proposes joint initiative with {p.name}",
+            "description": f"Warm relations lead to new cooperation in trade and security.",
+            "apply": lambda: (
+                p.relationships.__setitem__(friend_code, _clamp(friend_rel + random.uniform(2, 5), -100, 100)),
+                setattr(p.economy, 'gdp_growth', p.economy.gdp_growth + random.uniform(0.1, 0.3)),
+            ),
+        }))
+
+    # Sanctioned-by consequences
+    if p.sanctioned_by:
+        sanctioner_code = random.choice(p.sanctioned_by)
+        if sanctioner_code in world.countries:
+            sanctioner = world.countries[sanctioner_code]
+            pool.append((2.0, {
+                "headline": f"{sanctioner.name}'s sanctions bite {p.name}'s economy",
+                "description": "Import restrictions cause shortages in key sectors.",
+                "apply": lambda: (
+                    setattr(p.economy, 'inflation', p.economy.inflation + random.uniform(0.3, 0.8)),
+                    setattr(p.economy, 'gdp_growth', p.economy.gdp_growth - random.uniform(0.1, 0.3)),
+                ),
+            }))
+
+    # ── General world events (always available) ────────────────────────────
+    pool.append((0.8, {
+        "headline": "Global oil prices surge on supply concerns",
+        "description": "OPEC cuts and geopolitical tensions drive energy costs higher.",
+        "apply": lambda: (
+            setattr(p.economy, 'inflation', p.economy.inflation + random.uniform(0.3, 0.7)),
+            (setattr(p.economy, 'gdp_growth', p.economy.gdp_growth + random.uniform(0.2, 0.5))
+             if p.resources.oil > 50 else
+             setattr(p.economy, 'gdp_growth', p.economy.gdp_growth - random.uniform(0.1, 0.3))),
+        ),
+    }))
+    pool.append((0.6, {
+        "headline": "Global semiconductor shortage worsens",
+        "description": "Supply chain disruptions hit manufacturing worldwide.",
+        "apply": lambda: (
+            setattr(p.resources, 'manufacturing', _clamp(p.resources.manufacturing - random.uniform(1, 3))),
+            (setattr(p.economy, 'gdp_growth', p.economy.gdp_growth + random.uniform(0.2, 0.5))
+             if p.tech.semiconductors > 60 else
+             setattr(p.economy, 'gdp_growth', p.economy.gdp_growth - random.uniform(0.1, 0.2))),
+        ),
+    }))
+    pool.append((0.7, {
+        "headline": f"Severe weather event hits {p.region}",
+        "description": "Climate-driven extreme weather causes economic disruption.",
+        "apply": lambda: (
+            setattr(p.economy, 'gdp_growth', p.economy.gdp_growth - random.uniform(0.1, 0.4)),
+            setattr(p, 'stability', _clamp(p.stability - random.uniform(1, 2))),
+            setattr(p.resources, 'food', _clamp(p.resources.food - random.uniform(1, 3))),
+        ),
+    }))
+    pool.append((0.5, {
+        "headline": "UN General Assembly debates global reform",
+        "description": f"Several nations call for changes affecting {p.name}'s interests.",
+        "apply": lambda: (
+            setattr(p, 'influence', _clamp(p.influence + random.uniform(-2, 2))),
+        ),
+    }))
+    pool.append((0.6, {
+        "headline": "Global markets rally on optimism",
+        "description": "A wave of positive sentiment lifts economies worldwide.",
+        "apply": lambda: (
+            setattr(p.economy, 'gdp_growth', p.economy.gdp_growth + random.uniform(0.1, 0.3)),
+            setattr(p.leader, 'approval', _clamp(p.leader.approval + random.uniform(0.5, 1.5))),
+        ),
+    }))
+    pool.append((0.5, {
+        "headline": "Pandemic scare rattles global health systems",
+        "description": "A new pathogen variant triggers precautionary measures.",
+        "apply": lambda: (
+            setattr(p.economy, 'gdp_growth', p.economy.gdp_growth - random.uniform(0.2, 0.5)),
+            setattr(p, 'stability', _clamp(p.stability - random.uniform(1, 3))),
+            setattr(p.tech, 'biotech', _clamp(p.tech.biotech + random.uniform(0.5, 1.5))),
+        ),
+    }))
+    pool.append((0.4, {
+        "headline": "International space race heats up",
+        "description": f"New milestones put pressure on {p.name}'s space program.",
+        "apply": lambda: (
+            setattr(p.tech, 'space', _clamp(p.tech.space + random.uniform(0.5, 1.0)))
+            if p.tech.space > 40 else
+            setattr(p, 'influence', _clamp(p.influence - random.uniform(0.5, 1.0))),
+        ),
+    }))
+
+    if not pool:
+        return None
+
+    weights = [w for w, _ in pool]
+    _, event = random.choices(pool, weights=weights, k=1)[0]
+
+    # Apply the effects
+    event["apply"]()
+
+    return {
+        "type": "world_event",
+        "headline": event["headline"],
+        "description": event["description"],
+        "affects_player": True,
+    }
+
+
+def _trigger_ai_country_action(game: dict) -> dict | None:
     """Pick one AI nation to take a single action. Returns a reaction dict or None."""
     world = game["world"]
     player = world.get_player()
@@ -208,7 +499,6 @@ def _trigger_ai_reaction(game: dict) -> dict | None:
         if used >= 3:
             continue
         c = world.countries[code]
-        # Weight: powerful nations and those with strong player relationships react more
         w = c.power_index() / 40.0 + abs(player.relationships.get(code, 0)) / 40.0
         candidates.append((code, ai))
         weights.append(max(0.1, w))
@@ -216,11 +506,9 @@ def _trigger_ai_reaction(game: dict) -> dict | None:
     if not candidates:
         return None
 
-    # Pick a reactor
     (reactor_code, reactor_ai), = random.choices(candidates, weights=weights, k=1)
     reactor_country = world.countries[reactor_code]
 
-    # Have the AI take exactly 1 action
     results = reactor_ai.take_turn(world, action_points=1)
     ai_ap_used[reactor_code] = ai_ap_used.get(reactor_code, 0) + 1
 
@@ -228,19 +516,28 @@ def _trigger_ai_reaction(game: dict) -> dict | None:
         return None
 
     action_text = results[0]
-
-    # Check if this action directly affects the player
     affects_player = (
         player.name.lower() in action_text.lower()
         or player.code in action_text
     )
 
     return {
+        "type": "country_action",
         "country": reactor_country.name,
         "code": reactor_code,
         "action": action_text,
         "affects_player": affects_player,
     }
+
+
+def _trigger_world_reaction(game: dict) -> dict | None:
+    """Trigger either an AI country action or a contextual world event."""
+    # ~45% world event, ~55% country action
+    if random.random() < 0.45:
+        event = _generate_contextual_event(game)
+        if event:
+            return event
+    return _trigger_ai_country_action(game)
 
 
 # ── Routes ─────────────────────────────────────────────────────────────────
@@ -379,8 +676,8 @@ def do_action():
     game["action_points"] -= cost
     game["turn_log"].append(result)
 
-    # AI reaction: one nation takes an action after the player
-    ai_reaction = _trigger_ai_reaction(game)
+    # World reaction: either a country action or a world event
+    ai_reaction = _trigger_world_reaction(game)
 
     _save_session_state(game)
     return jsonify({
