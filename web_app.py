@@ -17,6 +17,7 @@ from game.events import EventEngine
 from game.ai import AIPlayer
 from game.actions import execute_action, ACTION_CATEGORIES, TECH_FIELDS
 from game.save_manager import save_game, load_game, list_saves, SAVE_DIR, ensure_save_dir
+from game.auth import create_user, verify_user, add_game_to_user, get_user_games
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "worldorder-dev-key-change-in-prod")
@@ -103,6 +104,10 @@ def _create_game(player_code: str) -> dict:
     sid = os.urandom(8).hex()
     session["game_id"] = sid
     _save_session_state(game)
+    # Link game to user account if logged in
+    username = session.get("username")
+    if username:
+        add_game_to_user(username, sid)
     return game
 
 
@@ -196,6 +201,54 @@ def index():
 def ping():
     """Health check endpoint. Also used by keep-alive."""
     return jsonify({"status": "ok"})
+
+
+# ── Auth routes ────────────────────────────────────────────────────────────
+
+@app.route("/api/auth/signup", methods=["POST"])
+def signup():
+    data = request.json
+    username = data.get("username", "").strip()
+    password = data.get("password", "")
+    ok, msg = create_user(username, password)
+    if not ok:
+        return jsonify({"error": msg}), 400
+    session["username"] = username
+    return jsonify({"username": username, "message": msg})
+
+
+@app.route("/api/auth/login", methods=["POST"])
+def login():
+    data = request.json
+    username = data.get("username", "").strip()
+    password = data.get("password", "")
+    ok, msg = verify_user(username, password)
+    if not ok:
+        return jsonify({"error": msg}), 401
+    session["username"] = username
+    # Restore most recent game if available
+    game_ids = get_user_games(username)
+    if game_ids:
+        session["game_id"] = game_ids[-1]
+    return jsonify({"username": username, "has_game": bool(game_ids)})
+
+
+@app.route("/api/auth/logout", methods=["POST"])
+def logout():
+    session.pop("username", None)
+    session.pop("game_id", None)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/auth/me", methods=["GET"])
+def me():
+    username = session.get("username")
+    if not username:
+        return jsonify({"logged_in": False})
+    game_ids = get_user_games(username)
+    has_game = bool(session.get("game_id"))
+    return jsonify({"logged_in": True, "username": username,
+                    "has_game": has_game, "game_count": len(game_ids)})
 
 
 @app.route("/api/countries", methods=["GET"])

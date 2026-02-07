@@ -161,6 +161,25 @@ button:hover { filter: brightness(1.15); }
 .rel-tense { color: var(--orange); }
 .rel-hostile { color: var(--red); }
 
+/* ── Auth ──────────────────────────────────────────── */
+.auth-form {
+  max-width: 340px; margin: 0 auto; padding: 20px;
+}
+.auth-form input {
+  width: 100%; padding: 12px 14px; margin-bottom: 10px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg3); color: var(--text);
+  font-size: 15px; font-family: inherit;
+}
+.auth-form input:focus { outline: none; border-color: var(--accent); }
+.auth-form .btn { width: 100%; padding: 12px; font-size: 15px; margin-bottom: 8px; }
+.auth-form .error { color: var(--red); font-size: 13px; margin-bottom: 10px; }
+.auth-form .toggle { color: var(--dim); font-size: 13px; text-align: center; }
+.auth-form .toggle a { color: var(--accent); cursor: pointer; }
+.user-badge {
+  display: inline-block; background: var(--bg3); border-radius: 20px;
+  padding: 4px 12px; font-size: 12px; color: var(--accent); margin-left: 8px;
+}
+
 /* ── News / Events ──────────────────────────────────── */
 .news-panel {
   background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
@@ -276,8 +295,29 @@ button:hover { filter: brightness(1.15); }
       manage your economy, project military power, and race for technological supremacy.
       Each turn is one month. Play a few turns per session &mdash; your game auto-saves.
     </p>
-    <button class="btn menu-btn" onclick="showSelectScreen()">New Game</button>
-    <button class="btn-dim menu-btn" onclick="showLoadScreen()">Continue Saved Game</button>
+    <!-- Logged-in menu -->
+    <div id="menu-logged-in" style="display:none;">
+      <div style="margin-bottom:16px;" id="welcome-msg"></div>
+      <button class="btn menu-btn" onclick="showSelectScreen()">New Game</button>
+      <button class="btn-dim menu-btn" onclick="resumeGame()">Continue Game</button>
+      <button class="btn-dim menu-btn" onclick="doLogout()" style="font-size:13px; opacity:.6;">Log Out</button>
+    </div>
+    <!-- Logged-out menu -->
+    <div id="menu-logged-out">
+      <div class="auth-form" id="auth-form">
+        <div class="error" id="auth-error" style="display:none;"></div>
+        <input type="text" id="auth-username" placeholder="Username" autocapitalize="none" autocorrect="off">
+        <input type="password" id="auth-password" placeholder="Password">
+        <button class="btn" id="auth-submit" onclick="doLogin()">Log In</button>
+        <div class="toggle">
+          <span id="auth-toggle-text">No account?</span>
+          <a id="auth-toggle-link" onclick="toggleAuthMode()">Sign Up</a>
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:12px;">
+        <a onclick="playAsGuest()" style="color:var(--dim); font-size:13px; cursor:pointer;">Play as guest (no save across devices)</a>
+      </div>
+    </div>
   </div>
 
   <!-- ═══ COUNTRY SELECT ═══ -->
@@ -415,7 +455,7 @@ function hideAll() {
   for (const id of ['title-screen','select-screen','load-screen','game-screen'])
     document.getElementById(id).style.display = 'none';
 }
-function showTitle() { hideAll(); document.getElementById('title-screen').style.display = ''; }
+function showTitle() { hideAll(); document.getElementById('title-screen').style.display = ''; updateAuthUI(); }
 async function showSelectScreen() {
   hideAll();
   const el = document.getElementById('select-screen');
@@ -862,10 +902,68 @@ function saveAndQuit() {
   showToast('Game auto-saved. You can close this tab.');
 }
 
-// ── Init ─────────────────────────────────────────────────────
+// ── Auth ─────────────────────────────────────────────────────
 
-// Check if we have an active game session
-(async () => {
+let authMode = 'login'; // 'login' or 'signup'
+let currentUser = null;
+
+function toggleAuthMode() {
+  authMode = authMode === 'login' ? 'signup' : 'login';
+  document.getElementById('auth-submit').textContent = authMode === 'login' ? 'Log In' : 'Sign Up';
+  document.getElementById('auth-toggle-text').textContent = authMode === 'login' ? 'No account?' : 'Have an account?';
+  document.getElementById('auth-toggle-link').textContent = authMode === 'login' ? 'Sign Up' : 'Log In';
+  document.getElementById('auth-error').style.display = 'none';
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.style.display = '';
+}
+
+async function doLogin() {
+  const username = document.getElementById('auth-username').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if (!username || !password) { showAuthError('Enter username and password.'); return; }
+
+  const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/signup';
+  const res = await api(endpoint, {username, password});
+  if (res.error) { showAuthError(res.error); return; }
+
+  currentUser = res.username;
+  document.getElementById('auth-error').style.display = 'none';
+
+  // If login and has existing game, try to load it
+  if (authMode === 'login' && res.has_game) {
+    try {
+      const state = await api('/api/state');
+      if (state && !state.error) {
+        STATE = state;
+        showGameScreen();
+        return;
+      }
+    } catch(e) {}
+  }
+  showTitle();
+  updateAuthUI();
+}
+
+async function doLogout() {
+  await api('/api/auth/logout', {});
+  currentUser = null;
+  STATE = null;
+  updateAuthUI();
+  showTitle();
+}
+
+function playAsGuest() {
+  currentUser = null;
+  document.getElementById('menu-logged-in').style.display = '';
+  document.getElementById('menu-logged-out').style.display = 'none';
+  document.getElementById('welcome-msg').innerHTML = '<span class="user-badge">Guest</span>';
+}
+
+async function resumeGame() {
   try {
     const state = await api('/api/state');
     if (state && !state.error) {
@@ -874,7 +972,51 @@ function saveAndQuit() {
       return;
     }
   } catch(e) {}
+  showToast('No saved game found. Start a new game.');
+}
+
+function updateAuthUI() {
+  if (currentUser) {
+    document.getElementById('menu-logged-in').style.display = '';
+    document.getElementById('menu-logged-out').style.display = 'none';
+    document.getElementById('welcome-msg').innerHTML = `Welcome, <b>${currentUser}</b> <span class="user-badge">${currentUser}</span>`;
+  } else {
+    document.getElementById('menu-logged-in').style.display = 'none';
+    document.getElementById('menu-logged-out').style.display = '';
+  }
+}
+
+// Handle Enter key in auth form
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('auth-password') === document.activeElement) {
+    doLogin();
+  }
+});
+
+// ── Init ─────────────────────────────────────────────────────
+
+(async () => {
+  // Check auth status
+  try {
+    const me = await api('/api/auth/me');
+    if (me.logged_in) {
+      currentUser = me.username;
+      updateAuthUI();
+      // Try to resume game
+      if (me.has_game) {
+        const state = await api('/api/state');
+        if (state && !state.error) {
+          STATE = state;
+          showGameScreen();
+          return;
+        }
+      }
+      showTitle();
+      return;
+    }
+  } catch(e) {}
   showTitle();
+  updateAuthUI();
 })();
 
 // Register service worker
