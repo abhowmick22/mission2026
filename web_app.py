@@ -129,7 +129,7 @@ def _world_state(game: dict) -> dict:
             "code": c.code,
             "region": c.region,
             "leader": {"name": c.leader.name, "title": c.leader.title,
-                       "traits": c.leader.traits, "approval": round(c.leader.approval, 1)},
+                       "traits": c.leader.traits},
             "government": c.government,
             "population": round(c.population, 1),
             "economy": {
@@ -230,8 +230,7 @@ def _generate_contextual_event(game: dict) -> dict | None:
             "headline": f"Cost of living protests erupt in {p.name}",
             "description": "Rising prices drive citizens to the streets.",
             "apply": lambda: (
-                setattr(p, 'stability', _clamp(p.stability - random.uniform(2, 5))),
-                setattr(p.leader, 'approval', _clamp(p.leader.approval - random.uniform(2, 4))),
+                setattr(p, 'stability', _clamp(p.stability - random.uniform(3, 7))),
             ),
         }))
     if p.economy.debt_ratio > 100:
@@ -248,8 +247,7 @@ def _generate_contextual_event(game: dict) -> dict | None:
             "headline": f"Youth unemployment crisis deepens in {p.name}",
             "description": "Lack of jobs fuels social unrest among younger generation.",
             "apply": lambda: (
-                setattr(p, 'stability', _clamp(p.stability - random.uniform(1, 3))),
-                setattr(p.leader, 'approval', _clamp(p.leader.approval - random.uniform(1, 3))),
+                setattr(p, 'stability', _clamp(p.stability - random.uniform(2, 5))),
             ),
         }))
     if p.economy.trade_balance > 0.05:
@@ -327,7 +325,7 @@ def _generate_contextual_event(game: dict) -> dict | None:
             "description": "Green transition draws international praise and investment.",
             "apply": lambda: (
                 setattr(p, 'influence', _clamp(p.influence + random.uniform(2, 4))),
-                setattr(p.leader, 'approval', _clamp(p.leader.approval + random.uniform(1, 2))),
+                setattr(p, 'stability', _clamp(p.stability + random.uniform(1, 2))),
             ),
         }))
 
@@ -337,8 +335,8 @@ def _generate_contextual_event(game: dict) -> dict | None:
             "headline": f"Opposition protests intensify across {p.name}",
             "description": "Demonstrators demand government accountability.",
             "apply": lambda: (
-                setattr(p.leader, 'approval', _clamp(p.leader.approval - random.uniform(2, 5))),
-                setattr(p, 'stability', _clamp(p.stability - random.uniform(1, 3))),
+                setattr(p, 'stability', _clamp(p.stability - random.uniform(3, 6))),
+                setattr(p, 'influence', _clamp(p.influence - random.uniform(1, 2))),
             ),
         }))
     if p.stability > 75:
@@ -350,13 +348,13 @@ def _generate_contextual_event(game: dict) -> dict | None:
                 setattr(p, 'influence', _clamp(p.influence + random.uniform(1, 2))),
             ),
         }))
-    if p.leader.approval < 30:
+    if p.stability < 25:
         pool.append((2.0, {
             "headline": f"Leadership crisis looms in {p.name}",
-            "description": "Polls show historic disapproval. Rivals sense opportunity.",
+            "description": "Deepening instability emboldens rivals at home and abroad.",
             "apply": lambda: (
                 setattr(p, 'stability', _clamp(p.stability - random.uniform(2, 4))),
-                setattr(p, 'influence', _clamp(p.influence - random.uniform(1, 2))),
+                setattr(p, 'influence', _clamp(p.influence - random.uniform(2, 4))),
             ),
         }))
 
@@ -446,7 +444,7 @@ def _generate_contextual_event(game: dict) -> dict | None:
         "description": "A wave of positive sentiment lifts economies worldwide.",
         "apply": lambda: (
             setattr(p.economy, 'gdp_growth', p.economy.gdp_growth + random.uniform(0.1, 0.3)),
-            setattr(p.leader, 'approval', _clamp(p.leader.approval + random.uniform(0.5, 1.5))),
+            setattr(p, 'stability', _clamp(p.stability + random.uniform(0.5, 1.5))),
         ),
     }))
     pool.append((0.5, {

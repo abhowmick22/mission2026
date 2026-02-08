@@ -59,12 +59,6 @@ class World:
             elif country.stability < 45:
                 country.stability += 0.3
 
-            # Approval drifts based on economy
-            if country.economy.gdp_growth > 2:
-                country.leader.approval += 0.2
-            elif country.economy.gdp_growth < 0:
-                country.leader.approval -= 0.5
-
             # Sanctions hurt over time
             sanction_pain = len(country.sanctioned_by) * 0.15
             country.economy.gdp_growth -= sanction_pain
@@ -76,7 +70,6 @@ class World:
             # Clamp values
             country.stability = max(0, min(100, country.stability))
             country.influence = max(0, min(100, country.influence))
-            country.leader.approval = max(0, min(100, country.leader.approval))
             country.military.power = max(0, min(100, country.military.power))
             country.tech.level = max(0, min(100, country.tech.level))
             country.economy.gdp = max(0.01, country.economy.gdp)
@@ -135,11 +128,6 @@ class World:
             return "Your country has collapsed into chaos. Game over."
         if player.economy.gdp < 0.05:
             return "Your economy has completely collapsed. Game over."
-        if player.leader.approval <= 0:
-            if player.government == "democracy":
-                return "You've been voted out of office in a landslide. Game over."
-            else:
-                return "A revolution has overthrown your government. Game over."
         return None
 
     def to_dict(self) -> dict:

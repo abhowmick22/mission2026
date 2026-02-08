@@ -622,7 +622,6 @@ function captureStats() {
     tech: p.tech.level,
     stability: p.stability,
     influence: p.influence,
-    approval: p.leader.approval,
     debt: p.economy.debt_ratio,
   };
 }
@@ -675,7 +674,6 @@ function renderQuickStats(p) {
     {label: 'Military', val: p.military.power.toFixed(0), key: 'military'},
     {label: 'Tech', val: p.tech.level.toFixed(0), key: 'tech'},
     {label: 'Stability', val: p.stability.toFixed(0), key: 'stability'},
-    {label: 'Approval', val: p.leader.approval.toFixed(0)+'%', key: 'approval'},
   ];
   const cur = captureStats();
   document.getElementById('quick-stats').innerHTML = stats.map(s => {
@@ -743,7 +741,6 @@ function renderStatus(p) {
   document.getElementById('p-status').innerHTML = `<h3>Status</h3>
     <div class="stat-row"><span class="stat-label">Stability</span>${bar(p.stability, 100, 'auto')}</div>
     <div class="stat-row"><span class="stat-label">Influence</span>${bar(p.influence, 100, 'auto')}</div>
-    <div class="stat-row"><span class="stat-label">Approval</span>${bar(p.leader.approval, 100, 'auto')}</div>
     ${statRow('Population', p.population.toFixed(0)+'M')}
     ${statRow('Alliances', p.alliances.length)}
     ${statRow('Power Index', p.power_index.toFixed(0))}`;
@@ -965,8 +962,8 @@ async function executeAction() {
 
 function computeChanges(before, after) {
   if (!before || !after) return [];
-  const labels = {gdp:'GDP', growth:'Growth', military:'Military', tech:'Tech', stability:'Stability', influence:'Influence', approval:'Approval', debt:'Debt'};
-  const suffixes = {gdp:'T', growth:'%', military:'', tech:'', stability:'', influence:'', approval:'%', debt:'%'};
+  const labels = {gdp:'GDP', growth:'Growth', military:'Military', tech:'Tech', stability:'Stability', influence:'Influence', debt:'Debt'};
+  const suffixes = {gdp:'T', growth:'%', military:'', tech:'', stability:'', influence:'', debt:'%'};
   const changes = [];
   for (const key of Object.keys(labels)) {
     const diff = after[key] - before[key];

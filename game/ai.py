@@ -240,7 +240,7 @@ class AIPlayer:
                 return ("crackdown", execute_action(world, c, "crackdown"))
             else:
                 return ("social", execute_action(world, c, "social"))
-        elif c.leader.approval < 35:
+        elif c.stability < 55:
             return ("propaganda", execute_action(world, c, "propaganda"))
         elif random.random() < 0.5:
             return ("social", execute_action(world, c, "social"))

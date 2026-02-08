@@ -1,4 +1,4 @@
-const CACHE_NAME = 'worldorder-v7';
+const CACHE_NAME = 'worldorder-v8';
 const STATIC_ASSETS = [
   '/static/manifest.json',
   '/static/icon-192.png',

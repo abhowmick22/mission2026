@@ -151,9 +151,8 @@ def economic_reform(world: World, actor: Country) -> str:
     actor.economy.unemployment -= random.uniform(0.2, 0.8)
     actor.economy.inflation -= random.uniform(0.2, 0.5)
     actor.stability -= random.uniform(1, 4)  # reforms cause some instability
-    actor.leader.approval -= random.uniform(1, 3)
     return ("Economic reform package implemented. Growth improved, unemployment down, "
-            "but some public pushback on changes.")
+            "but some instability from changes.")
 
 
 def invest_infrastructure(world: World, actor: Country) -> str:
@@ -161,10 +160,9 @@ def invest_infrastructure(world: World, actor: Country) -> str:
     actor.economy.gdp_growth += random.uniform(0.2, 0.6)
     actor.economy.debt_ratio += cost_ratio
     actor.stability += random.uniform(1, 3)
-    actor.leader.approval += random.uniform(1, 3)
     actor.resources.manufacturing += random.uniform(1, 3)
     return ("Major infrastructure investment announced. Growth boosted, "
-            "manufacturing capacity up, public approval rises.")
+            "manufacturing capacity up, stability rises.")
 
 
 def raise_tariffs(world: World, actor: Country, target_code: str) -> str:
@@ -309,10 +307,9 @@ def tech_partnership(world: World, actor: Country, target_code: str) -> str:
 
 def social_program(world: World, actor: Country) -> str:
     actor.stability = clamp(actor.stability + random.uniform(3, 7))
-    actor.leader.approval = clamp(actor.leader.approval + random.uniform(2, 5))
     actor.economy.debt_ratio += 0.3
     actor.economy.unemployment -= random.uniform(0.2, 0.5)
-    return ("Social program launched. Stability and approval up, "
+    return ("Social program launched. Stability up, "
             "unemployment down, but adds to national debt.")
 
 
@@ -324,25 +321,23 @@ def political_reform(world: World, actor: Country) -> str:
             return "Political reform attempt backfires — hardliners resist. Stability drops."
     actor.stability = clamp(actor.stability + random.uniform(2, 5))
     actor.influence = clamp(actor.influence + random.uniform(1, 3))
-    actor.leader.approval += random.uniform(-3, 5)
-    return "Political reforms enacted. Global standing improves."
+    return "Political reforms enacted. Stability and global standing improve."
 
 
 def propaganda_campaign(world: World, actor: Country) -> str:
-    actor.leader.approval = clamp(actor.leader.approval + random.uniform(3, 8))
-    actor.stability = clamp(actor.stability + random.uniform(1, 4))
+    actor.stability = clamp(actor.stability + random.uniform(3, 8))
+    actor.influence = clamp(actor.influence + random.uniform(1, 3))
     if actor.government == "democracy":
         # Can backfire in democracies
         if random.random() < 0.3:
-            actor.leader.approval -= 5
-            return "Propaganda campaign exposed by free press! Approval drops."
-    return "Media campaign boosts public support. Approval rating rises."
+            actor.stability -= random.uniform(3, 5)
+            return "Media campaign exposed by free press! Stability drops."
+    return "Media campaign boosts national unity. Stability rises."
 
 
 def crack_down(world: World, actor: Country) -> str:
     """Authoritarian stability move."""
     actor.stability = clamp(actor.stability + random.uniform(5, 10))
-    actor.leader.approval += random.uniform(-5, 2)
     actor.influence = clamp(actor.influence - random.uniform(2, 5))
     # Democracies condemn
     for code, c in world.countries.items():
@@ -403,7 +398,7 @@ ACTION_CATEGORIES = {
         {"id": "political_reform", "name": "Political Reform", "cost": 1, "needs_target": False,
          "desc": "Enact governance reforms"},
         {"id": "propaganda", "name": "Media Campaign", "cost": 1, "needs_target": False,
-         "desc": "Boost public approval"},
+         "desc": "Boost stability through media"},
         {"id": "crackdown", "name": "Crackdown", "cost": 1, "needs_target": False,
          "desc": "Restore order through force (risky)"},
     ],
