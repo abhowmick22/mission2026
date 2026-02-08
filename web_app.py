@@ -19,6 +19,7 @@ from game.ai import AIPlayer
 from game.actions import execute_action, ACTION_CATEGORIES, TECH_FIELDS
 from game.save_manager import save_game, load_game, list_saves, SAVE_DIR, ensure_save_dir
 from game.auth import create_user, verify_user, add_game_to_user, get_user_games
+from game.llm import enrich_action_result, enrich_world_event, enrich_ai_reaction, is_enabled as llm_enabled
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "worldorder-dev-key-change-in-prod")
@@ -191,6 +192,7 @@ def _world_state(game: dict) -> dict:
         "actions": ACTION_CATEGORIES,
         "tech_fields": {k: v[1] for k, v in TECH_FIELDS.items()},
         "regions": sorted(set(c.region for c in world.countries.values())),
+        "llm_enabled": llm_enabled(),
     }
 
 
@@ -475,10 +477,14 @@ def _generate_contextual_event(game: dict) -> dict | None:
     # Apply the effects
     event["apply"]()
 
+    headline, description = enrich_world_event(
+        event["headline"], event["description"], p.name
+    )
+
     return {
         "type": "world_event",
-        "headline": event["headline"],
-        "description": event["description"],
+        "headline": headline,
+        "description": description,
         "affects_player": True,
     }
 
@@ -519,11 +525,16 @@ def _trigger_ai_country_action(game: dict) -> dict | None:
         or player.code in action_text
     )
 
+    rel = player.relationships.get(reactor_code, 0)
+    enriched_text = enrich_ai_reaction(
+        reactor_country.name, action_text, player.name, rel
+    )
+
     return {
         "type": "country_action",
         "country": reactor_country.name,
         "code": reactor_code,
-        "action": action_text,
+        "action": enriched_text,
         "affects_player": affects_player,
     }
 
@@ -669,17 +680,19 @@ def do_action():
     if cost > game["action_points"]:
         return jsonify({"error": "Not enough action points"}), 400
 
-    result = execute_action(world, world.get_player(), action_id,
+    player = world.get_player()
+    result = execute_action(world, player, action_id,
                             target_code=target_code, region=region, field=field)
+    enriched_result = enrich_action_result(player.name, result)
     game["action_points"] -= cost
-    game["turn_log"].append(result)
+    game["turn_log"].append(result)  # log stores the original concise text
 
     # World reaction: either a country action or a world event
     ai_reaction = _trigger_world_reaction(game)
 
     _save_session_state(game)
     return jsonify({
-        "result": result,
+        "result": enriched_result,
         "state": _world_state(game),
         "ai_reaction": ai_reaction,
     })

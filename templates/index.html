@@ -426,6 +426,7 @@ button:hover { filter: brightness(1.15); }
       <div style="text-align:right;">
         <span class="ap-badge" id="g-ap"></span>
         <div class="meta" id="g-rank"></div>
+        <div class="meta" id="g-llm" style="display:none;color:var(--green);font-size:11px;">AI Narration</div>
       </div>
     </div>
 
@@ -637,6 +638,7 @@ function render() {
   document.getElementById('g-turn').textContent = `Turn ${STATE.turn}`;
   document.getElementById('g-ap').textContent = `${STATE.action_points} AP`;
   document.getElementById('g-rank').textContent = `Rank #${STATE.player_rank}`;
+  document.getElementById('g-llm').style.display = STATE.llm_enabled ? 'block' : 'none';
 
   // Turn guide
   document.getElementById('tg-ap').textContent = STATE.action_points;
